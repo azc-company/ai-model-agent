@@ -56,6 +56,7 @@ export interface ModelSpec {
   supports_web_search: boolean;
   is_deprecated: boolean;
   is_new?: boolean;
+  first_seen_at?: string | null;   // 카탈로그 최초 발견일 (UTC)
   hardware_requirements?: any;
 }
 

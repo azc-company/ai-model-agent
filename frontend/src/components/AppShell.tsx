@@ -11,6 +11,7 @@ interface AppShellProps {
   compareCount: number;
   globalSearchQuery?: string;
   onGlobalSearch?: (query: string) => void;
+  catalogStats?: { models: number; providers: number };
   children: React.ReactNode;
 }
 
@@ -20,6 +21,7 @@ export const AppShell: React.FC<AppShellProps> = ({
   compareCount,
   globalSearchQuery,
   onGlobalSearch,
+  catalogStats,
   children,
 }) => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -44,6 +46,7 @@ export const AppShell: React.FC<AppShellProps> = ({
           onOpenMobileMenu={() => setMobileMenuOpen(true)}
           globalSearchQuery={globalSearchQuery}
           onGlobalSearch={onGlobalSearch}
+          catalogStats={catalogStats}
         />
         {children}
       </div>

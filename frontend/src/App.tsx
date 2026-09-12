@@ -1,5 +1,5 @@
 // 🚀 Cloudflare Workers CI/CD Pipeline Active
-import React, { lazy, Suspense, useState, useEffect, useRef } from 'react';
+import React, { lazy, Suspense, useState, useEffect, useRef, useMemo } from 'react';
 import type { ModelSpec, Provider } from './types';
 import { fetchModels, fetchProviders } from './api';
 import { LanguageProvider, useLanguage } from './context/LanguageContext';
@@ -129,8 +129,14 @@ export const AppContent: React.FC = () => {
     setSelectedModelIds([]);
   };
 
+  // 헤더에 580+ / 24 를 박아 두었더니 카탈로그가 612 / 69 로 자라도 그대로였다.
+  const catalogStats = useMemo(
+    () => ({ models: models.length, providers: new Set(models.map((m) => m.provider_name)).size }),
+    [models],
+  );
+
   return (
-    <AppShell activeTab={activeTab} onNavigate={setActiveTab} compareCount={selectedModelIds.length} globalSearchQuery={globalSearchQuery} onGlobalSearch={handleGlobalSearch}>
+    <AppShell activeTab={activeTab} onNavigate={setActiveTab} compareCount={selectedModelIds.length} globalSearchQuery={globalSearchQuery} onGlobalSearch={handleGlobalSearch} catalogStats={catalogStats}>
         <main className="flex-1 max-w-[var(--content-max)] w-full mx-auto px-2.5 sm:px-6 py-4 sm:py-8" aria-busy={loading || undefined}>
           {loading && models.length === 0 ? (
             <div>

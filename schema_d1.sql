@@ -158,3 +158,7 @@ CREATE TABLE IF NOT EXISTS gsc_metrics (
   PRIMARY KEY (date, dimension, value)
 );
 CREATE INDEX IF NOT EXISTS idx_gsc_dim_date ON gsc_metrics(dimension, date DESC);
+
+-- 2026-09-13: 카탈로그 최초 발견일. 동기화(ON CONFLICT DO UPDATE)가 덮어쓰지 않는다.
+-- Worker 가 이 값으로 "신규 모델"(30일 이내)을 계산한다. is_new 컬럼은 더 이상 쓰지 않는다.
+ALTER TABLE models ADD COLUMN first_seen_at TEXT;

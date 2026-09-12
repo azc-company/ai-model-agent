@@ -21,6 +21,7 @@ interface HeaderTopBarProps {
   onOpenMobileMenu: () => void;
   globalSearchQuery?: string;
   onGlobalSearch?: (query: string) => void;
+  catalogStats?: { models: number; providers: number };
 }
 
 export const HeaderTopBar: React.FC<HeaderTopBarProps> = ({
@@ -30,6 +31,7 @@ export const HeaderTopBar: React.FC<HeaderTopBarProps> = ({
   onOpenMobileMenu,
   globalSearchQuery = '',
   onGlobalSearch,
+  catalogStats,
 }) => {
   const { language, setLanguage, t } = useLanguage();
   const { theme, toggleTheme } = useTheme();
@@ -94,7 +96,7 @@ export const HeaderTopBar: React.FC<HeaderTopBarProps> = ({
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
             </span>
-            <span>580+ AI Models | 24 Providers | Live Sync</span>
+            <span>{catalogStats?.models ? `${catalogStats.models} AI Models | ${catalogStats.providers} Providers | Live Sync` : 'AI Models | Live Sync'}</span>
           </div>
         </div>
 
@@ -108,7 +110,7 @@ export const HeaderTopBar: React.FC<HeaderTopBarProps> = ({
               aria-label="전역 모델 검색"
               value={searchQuery}
               onChange={(e) => handleSearchChange(e.target.value)}
-              placeholder="580+ 모델, 프로바이더, 라이선스 검색..."
+              placeholder={catalogStats?.models ? `${catalogStats.models}개 모델, 프로바이더, 라이선스 검색...` : '모델, 프로바이더, 라이선스 검색...'}
               className="w-full bg-slate-100/90 dark:bg-slate-900/80 border border-slate-200 dark:border-white/10 rounded-xl pl-9 pr-16 py-1.5 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-indigo-500 dark:focus:border-cyan-500/60 focus:ring-2 focus:ring-indigo-500/20 transition shadow-inner font-bold"
             />
 

@@ -171,6 +171,18 @@ function classifyLenses(title: string, summary: string, sourceName: string, cate
 // key_takeaways/original_sources/created_at/tags/matched_lenses/image_url 뿐이다.
 // source_name·multi_sources·primary_topic·is_synthesized 를 읽던 분기는 항상 undefined
 // 였으므로 제거했다.
+// "신규 모델" 은 카탈로그에 처음 들어온 지 30일 이내인 모델이다.
+// 예전에는 시드 데이터에 손으로 박은 is_new 플래그를 그대로 내보냈고, 동기화는 이 값을
+// 항상 0 으로 썼다. 그 결과 1년 전 모델(DeepSeek R1, Grok 3)이 계속 "신규" 로 뜨고
+// 실제로 새로 들어온 GPT-6 Astra 는 한 번도 신규로 표시되지 않았다.
+// first_seen_at 은 동기화가 절대 덮어쓰지 않으므로 이 판정이 저절로 흘러간다.
+const NEW_MODEL_WINDOW_MS = 30 * 24 * 60 * 60 * 1000;
+function isNewModel(firstSeen: unknown): boolean {
+  if (typeof firstSeen !== 'string' || !firstSeen) return false;
+  const t = Date.parse(firstSeen.replace(' ', 'T') + 'Z');   // D1 datetime 은 UTC, 'Z' 가 없다
+  return Number.isFinite(t) && Date.now() - t < NEW_MODEL_WINDOW_MS;
+}
+
 function safeJson<T>(v: unknown, fallback: T): T {
   if (typeof v !== 'string') return (v as T) ?? fallback;
   try { return JSON.parse(v || 'null') ?? fallback; } catch { return fallback; }
@@ -657,7 +669,7 @@ export default Sentry.withSentry(
           supports_reasoning: Boolean(m.supports_reasoning),
           supports_web_search: Boolean(m.supports_web_search),
           is_deprecated: Boolean(m.is_deprecated),
-          is_new: Boolean(m.is_new),
+          is_new: isNewModel(m.first_seen_at),
           modality: typeof m.modality === 'string' ? JSON.parse(m.modality || '[]') : m.modality,
           api_pricing: typeof m.api_pricing === 'string' ? JSON.parse(m.api_pricing || '{}') : m.api_pricing,
           quota: typeof m.quota === 'string' ? JSON.parse(m.quota || '{}') : m.quota,
@@ -694,7 +706,7 @@ export default Sentry.withSentry(
           supports_reasoning: Boolean(m.supports_reasoning),
           supports_web_search: Boolean(m.supports_web_search),
           is_deprecated: Boolean(m.is_deprecated),
-          is_new: Boolean(m.is_new),
+          is_new: isNewModel(m.first_seen_at),
           modality: typeof m.modality === 'string' ? JSON.parse(m.modality || '[]') : m.modality,
           api_pricing: typeof m.api_pricing === 'string' ? JSON.parse(m.api_pricing || '{}') : m.api_pricing,
           quota: typeof m.quota === 'string' ? JSON.parse(m.quota || '{}') : m.quota,

@@ -34,6 +34,25 @@ OPENROUTER_API_URL = "https://openrouter.ai/api/v1/models"
 # 1. OpenRouter API 수집
 # ─────────────────────────────────────────────────────────
 
+
+# 동기화 때 덮어쓸 컬럼. 여기 없는 컬럼은 보존된다.
+#   first_seen_at   — 최초 발견일. "신규 모델" 판정의 유일한 근거라 절대 덮어쓰지 않는다.
+#   is_new          — 더 이상 쓰지 않는다(Worker 가 first_seen_at 으로 계산). 건드리지 않는다.
+#   description_i18n— 설명이 바뀐 경우에만 비워 번역 배치가 다시 채우게 한다.
+_UPSERT_COLUMNS = (
+    "provider_id", "provider_name", "name", "tier", "is_open_weight", "license_type",
+    "parameter_count_b", "architecture", "context_window", "max_output_tokens", "modality",
+    "description", "official_url", "source_docs_url", "api_pricing", "quota", "benchmarks",
+    "is_verified", "litellm_id", "supports_reasoning", "supports_web_search", "is_deprecated",
+    "hardware_requirements", "source",
+)
+UPSERT_SET = ",\n  ".join(
+    ["description_i18n = CASE WHEN models.description IS excluded.description "
+     "THEN models.description_i18n ELSE NULL END"]
+    + [f"{c} = excluded.{c}" for c in _UPSERT_COLUMNS]
+    + ["updated_at = CURRENT_TIMESTAMP"]
+)
+
 def fetch_openrouter_models() -> List[Dict]:
     """OpenRouter API에서 최신 LLM 모델 목록 수집"""
     print("📡 OpenRouter API 수집 중...")
@@ -168,12 +187,15 @@ def convert_model_to_sql(ext: Dict) -> Optional[str]:
         "currency": "USD"
     }
 
-    sql = f"""INSERT OR REPLACE INTO models (
+    # INSERT OR REPLACE 는 충돌 시 행을 지우고 다시 넣는다. 그래서 컬럼 목록에 없는
+    # description_i18n 이 매주 NULL 로 날아가고(번역 배치가 430건을 다시 번역했다),
+    # 최초 발견일도 남길 방법이 없었다. ON CONFLICT 로 필요한 컬럼만 갱신한다.
+    sql = f"""INSERT INTO models (
   id, provider_id, provider_name, name, tier, is_open_weight, license_type,
   parameter_count_b, architecture, context_window, max_output_tokens, modality,
   description, official_url, source_docs_url, api_pricing, quota, benchmarks,
   is_verified, litellm_id, supports_reasoning, supports_web_search, is_deprecated, is_new, hardware_requirements,
-  source
+  source, first_seen_at
 ) VALUES (
   '{escape_sql(sanitized_id)}',
   '{escape_sql(pid)}',
@@ -200,8 +222,11 @@ def convert_model_to_sql(ext: Dict) -> Optional[str]:
   0,
   0,
   '{escape_sql(json.dumps({}, ensure_ascii=False))}',
-  'feed'
-);"""
+  'feed',
+  datetime('now')
+)
+ON CONFLICT(id) DO UPDATE SET
+  {UPSERT_SET};"""
     return sql
 
 

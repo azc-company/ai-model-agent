@@ -161,25 +161,13 @@ export const Dashboard: React.FC<DashboardProps> = ({
     return ['openai', 'anthropic', 'google', 'meta', 'mistral', 'deepseek', 'aws', 'aws_bedrock', 'cohere', 'perplexity', 'xai', 'alibaba', 'microsoft'].includes(p);
   };
 
-  const checkIsNew = (model: ModelSpec): boolean => {
-    if (model.is_new) return true;
-    const id = (model.id || '').toLowerCase();
-    const name = (model.name || '').toLowerCase();
-    return (
-      id.includes('claude-3-7') ||
-      id.includes('gpt-4.5') ||
-      id.includes('gemini-2.5') ||
-      id.includes('deepseek-r1') ||
-      id.includes('deepseek-v3') ||
-      id.includes('llama-4') ||
-      id.includes('o3-mini') ||
-      id.includes('qwen-3') ||
-      id.includes('grok-3') ||
-      name.includes('3.7') ||
-      name.includes('4.5') ||
-      name.includes('2.5') ||
-      name.includes('r1')
-    );
+  // 신규 판정은 서버가 한다(카탈로그 최초 발견 30일 이내). 예전에는 여기서 이름에
+  // '2.5'·'4.5'·'r1' 이 들어가면 신규로 쳐서 Gemini 2.5·Claude Opus 4.5·DeepSeek R1 이
+  // 계속 신규로 뜨고, 실제로 새로 들어온 모델은 묻혔다.
+  const checkIsNew = (model: ModelSpec): boolean => Boolean(model.is_new);
+  const firstSeen = (model: ModelSpec): number => {
+    const t = model.first_seen_at ? Date.parse(model.first_seen_at.replace(' ', 'T') + 'Z') : NaN;
+    return Number.isFinite(t) ? t : 0;
   };
 
   const filteredModels = models.filter((model) => {
@@ -206,7 +194,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
     let av: number | string = 0;
     let bv: number | string = 0;
     switch (sortKey) {
-      case 'is_new':    av = checkIsNew(a) ? 1 : 0; bv = checkIsNew(b) ? 1 : 0; break;
+      case 'is_new':    av = firstSeen(a); bv = firstSeen(b); break;   // 최근에 들어온 순
       case 'name':      av = a.name; bv = b.name; break;
       case 'provider':  av = a.provider_name; bv = b.provider_name; break;
       case 'tier':      av = TIER_ORDER[a.tier] ?? 0; bv = TIER_ORDER[b.tier] ?? 0; break;
