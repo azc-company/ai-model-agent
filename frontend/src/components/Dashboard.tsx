@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import type { ModelSpec, Provider } from '../types';
 import { useLanguage } from '../context/LanguageContext';
 import { fetchModels, fetchProviders } from '../api';
@@ -64,9 +64,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
   // View Mode: 'grid' | 'table' | 'compact'
   const [viewMode, setViewMode] = useState<'grid' | 'table' | 'compact'>('grid');
 
-  // Sort state: 기본값 최신 인기 대표 모델(Arena Elo high) 우선 정렬
+  // 기본 정렬은 최근에 들어온 순이다. 예전 기본값인 Arena ELO 는 8월 시드 데이터에만
+  // 값이 있어서(612개 중 169개), 새로 들어온 모델은 전부 N/A 로 목록 맨 뒤에 가라앉았다.
   type SortKey = 'name' | 'provider' | 'tier' | 'context' | 'input_price' | 'output_price' | 'arena_elo' | 'rpm' | 'is_new';
-  const [sortKey, setSortKey] = useState<SortKey>('arena_elo');
+  const [sortKey, setSortKey] = useState<SortKey>('is_new');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
 
   const handleSort = (key: SortKey) => {
@@ -190,6 +191,24 @@ export const Dashboard: React.FC<DashboardProps> = ({
     return matchesSearch && matchesProvider && matchesTier && matchesLicense && matchesReasoning && matchesWebSearch && matchesVerified && matchesNew;
   });
 
+  // 상단 카드 3개. 예전에는 모델명·ELO·초당 토큰 수가 문자열로 박혀 있었다 — 카탈로그에는
+  // 속도 데이터가 아예 없고 ELO 도 8월 시드에만 있다. 매주 동기화로 새로 받는 값
+  // (최초 발견일·컨텍스트·가격)에서만 계산한다.
+  const highlights = useMemo(() => {
+    const blended = (m: ModelSpec) => (3 * (m.api_pricing?.input_price_per_1m || 0) + (m.api_pricing?.output_price_per_1m || 0)) / 4;
+    const fresh = models.filter((m) => m.is_new)
+      .sort((a, b) => firstSeen(b) - firstSeen(a) || Number(b.tier === 'Frontier') - Number(a.tier === 'Frontier') || a.name.localeCompare(b.name));
+    const longest = models
+      .filter((m) => m.source === 'feed' && !/router/i.test(m.name))   // 라우터는 모델이 아니다
+      .reduce<ModelSpec | undefined>((best, m) => (!best || m.context_window > best.context_window ? m : best), undefined);
+    const MAJOR = /^(OpenAI|Anthropic|Google|Meta|Mistral|DeepSeek|xAI|SpaceXAI|Alibaba|Qwen|Microsoft|Amazon)/i;
+    const value = models
+      .filter((m) => m.tier === 'Frontier' && MAJOR.test(m.provider_name) && !/\(batch\)/i.test(m.name)
+        && (m.api_pricing?.input_price_per_1m || 0) > 0 && (m.api_pricing?.output_price_per_1m || 0) > 0)
+      .reduce<ModelSpec | undefined>((best, m) => (!best || blended(m) < blended(best) ? m : best), undefined);
+    return { fresh, longest, value, price: value ? blended(value) : 0 };
+  }, [models]);
+
   const sortedModels = [...filteredModels].sort((a, b) => {
     let av: number | string = 0;
     let bv: number | string = 0;
@@ -207,7 +226,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
     if (typeof av === 'string' && typeof bv === 'string') {
       return sortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
     }
-    return sortDir === 'asc' ? (av as number) - (bv as number) : (bv as number) - (av as number);
+    const diff = sortDir === 'asc' ? (av as number) - (bv as number) : (bv as number) - (av as number);
+    if (diff !== 0 || sortKey !== 'is_new') return diff;
+    // 발견일이 같으면(추적 이전부터 있던 모델들) ELO 가 있는 모델을 앞에, 그다음 이름순
+    return (b.benchmarks.arena_elo ?? -1) - (a.benchmarks.arena_elo ?? -1) || a.name.localeCompare(b.name);
   });
 
   // Sort indicator icon
@@ -247,15 +269,15 @@ export const Dashboard: React.FC<DashboardProps> = ({
         <div className="bento-card-2026 p-6 relative overflow-hidden group border border-purple-200 dark:border-purple-500/30 bg-gradient-to-br from-indigo-50/90 via-purple-50/50 to-white dark:from-purple-950/40 dark:to-slate-950/80 shadow-sm">
           <div className="flex items-center justify-between mb-3">
             <span className="text-2xs font-black tracking-widest uppercase text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-700/20 border border-purple-200 dark:border-purple-500/30 px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-sm">
-              <span>👑 TOP ELO LEADER</span>
+              <span>✨ JUST ADDED</span>
             </span>
-            <span className="text-xs font-mono font-black text-purple-700 dark:text-amber-400">1360 Elo</span>
+            <span className="text-xs font-mono font-black text-purple-700 dark:text-amber-400">{highlights.fresh.length} new</span>
           </div>
           <h3 className="text-lg font-black text-slate-900 dark:text-white mb-1 group-hover:text-indigo-600 dark:group-hover:text-cyan-300 transition-colors">
-            DeepSeek R1 / GPT-4o
+            {highlights.fresh[0]?.name ?? '—'}
           </h3>
           <p className="text-xs text-muted leading-relaxed font-semibold">
-            {t.dashboard.kpiEloDesc}
+            {t.dashboard.kpiNewDesc}
           </p>
         </div>
 
@@ -263,15 +285,15 @@ export const Dashboard: React.FC<DashboardProps> = ({
         <div className="bento-card-2026 p-6 relative overflow-hidden group border border-cyan-200 dark:border-cyan-500/30 bg-gradient-to-br from-sky-50/90 via-cyan-50/50 to-white dark:from-cyan-950/40 dark:to-slate-950/80 shadow-sm">
           <div className="flex items-center justify-between mb-3">
             <span className="text-2xs font-black tracking-widest uppercase text-cyan-800 dark:text-cyan-300 bg-cyan-100 dark:bg-cyan-500/20 border border-cyan-200 dark:border-cyan-500/30 px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-sm">
-              <span>⚡ SPEED CHAMPION</span>
+              <span>📏 LONGEST CONTEXT</span>
             </span>
-            <span className="text-xs font-mono font-black text-accent">2,100 TPS</span>
+            <span className="text-xs font-mono font-black text-accent">{highlights.longest ? `${(highlights.longest.context_window / 1_000_000).toLocaleString(undefined, { maximumFractionDigits: 2 })}M tokens` : '—'}</span>
           </div>
           <h3 className="text-lg font-black text-slate-900 dark:text-white mb-1 group-hover:text-cyan-600 transition-colors">
-            Cerebras Llama 3.3 70B
+            {highlights.longest?.name ?? '—'}
           </h3>
           <p className="text-xs text-muted leading-relaxed font-semibold">
-            {t.dashboard.kpiSpeedDesc}
+            {t.dashboard.kpiContextDesc}
           </p>
         </div>
 
@@ -279,12 +301,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
         <div className="bento-card-2026 p-6 relative overflow-hidden group border border-emerald-200 dark:border-emerald-500/30 bg-gradient-to-br from-emerald-50/90 via-teal-50/50 to-white dark:from-emerald-950/40 dark:to-slate-950/80 shadow-sm">
           <div className="flex items-center justify-between mb-3">
             <span className="text-2xs font-black tracking-widest uppercase text-emerald-800 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-500/20 border border-emerald-200 dark:border-emerald-500/30 px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-sm">
-              <span>💎 BEST EFFICIENCY</span>
+              <span>💎 BEST FRONTIER VALUE</span>
             </span>
-            <span className="text-xs font-mono font-black text-emerald-700 dark:text-emerald-300">$0.50 / 1M</span>
+            <span className="text-xs font-mono font-black text-emerald-700 dark:text-emerald-300">{highlights.value ? `$${highlights.price.toFixed(3)} / 1M` : '—'}</span>
           </div>
           <h3 className="text-lg font-black text-slate-900 dark:text-white mb-1 group-hover:text-emerald-600 transition-colors">
-            ByteDance Seed / Qwen 2.5
+            {highlights.value?.name ?? '—'}
           </h3>
           <p className="text-xs text-muted leading-relaxed font-semibold">
             {t.dashboard.kpiValueDesc}
@@ -494,7 +516,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           <select
             aria-label="정렬 기준"
             value={sortKey}
-            onChange={e => setSortKey(e.target.value as SortKey)}
+            onChange={e => { const k = e.target.value as SortKey; setSortKey(k); if (k === 'is_new') setSortDir('desc'); }}
             className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white border border-slate-300 dark:border-slate-700 focus:border-cyan-500 rounded-xl px-3 py-2 text-xs font-extrabold shadow-sm cursor-pointer"
           >
             <option value="is_new">✨ 신규/최신 모델 우선</option>

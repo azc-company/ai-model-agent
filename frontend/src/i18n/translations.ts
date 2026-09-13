@@ -79,8 +79,8 @@ export interface TranslationDictionary {
     sortDesc: string;
     sortAscTitle: string;
     sortDescTitle: string;
-    kpiEloDesc: string;
-    kpiSpeedDesc: string;
+    kpiNewDesc: string;
+    kpiContextDesc: string;
     kpiValueDesc: string;
   };
   tco: {
@@ -354,9 +354,9 @@ export const translations: Record<Language, TranslationDictionary> = {
       sortDesc: "▼ 내림차순",
       sortAscTitle: "오름차순 정렬",
       sortDescTitle: "내림차순 정렬",
-      kpiEloDesc: "글로벌 LMSYS Chatbot Arena 복합 추론 & 지식 평가 1위 프론티어 모델",
-      kpiSpeedDesc: "초당 2,100 토큰 초고속 서빙 및 TTFT 180ms 최저 지연시간 기록",
-      kpiValueDesc: "1M 토큰당 /bin/zsh.50 최저비용으로 프론티어급 코드 & 추론 성능 제공"
+      kpiNewDesc: "최근 30일 사이 카탈로그에 새로 들어온 모델",
+      kpiContextDesc: "매주 동기화되는 모델 중 가장 긴 컨텍스트",
+      kpiValueDesc: "주요 프로바이더 프론티어 모델 중 가장 저렴한 가격 (입력:출력 3:1 기준)"
     },
     tco: {
       title: "셀프호스팅 TCO 손익분기 시뮬레이터",
@@ -627,9 +627,9 @@ export const translations: Record<Language, TranslationDictionary> = {
       sortDesc: "▼ Descending",
       sortAscTitle: "Sort ascending",
       sortDescTitle: "Sort descending",
-      kpiEloDesc: "Top-ranked frontier model on LMSYS Chatbot Arena for combined reasoning and knowledge",
-      kpiSpeedDesc: "2,100 tokens per second with a best-in-class 180 ms time to first token",
-      kpiValueDesc: "Frontier-class coding and reasoning at just /bin/zsh.50 per 1M tokens"
+      kpiNewDesc: "Models added to the catalog in the last 30 days",
+      kpiContextDesc: "Longest context window among weekly-synced models",
+      kpiValueDesc: "Cheapest frontier model from a major provider (3:1 input:output blend)"
     },
     tco: {
       title: "Self-Hosting TCO Break-Even Simulator",
@@ -900,9 +900,9 @@ export const translations: Record<Language, TranslationDictionary> = {
       sortDesc: "▼ 降順",
       sortAscTitle: "昇順に並び替え",
       sortDescTitle: "降順に並び替え",
-      kpiEloDesc: "LMSYS Chatbot Arena の総合推論・知識評価で1位のフロンティアモデル",
-      kpiSpeedDesc: "毎秒2,100トークンの超高速サービングと180msの最速TTFT",
-      kpiValueDesc: "100万トークンあたり/bin/zsh.50でフロンティア級のコーディングと推論を提供"
+      kpiNewDesc: "過去30日間にカタログへ追加されたモデル",
+      kpiContextDesc: "毎週同期されるモデルのうち最長のコンテキスト",
+      kpiValueDesc: "主要プロバイダーのフロンティアモデルで最安 (入力:出力 3:1 換算)"
     },
     tco: {
       title: "セルフホスティングTCO損益分岐シミュレーター",
@@ -1173,9 +1173,9 @@ export const translations: Record<Language, TranslationDictionary> = {
       sortDesc: "▼ 降序",
       sortAscTitle: "按升序排序",
       sortDescTitle: "按降序排序",
-      kpiEloDesc: "在 LMSYS Chatbot Arena 综合推理与知识评测中排名第一的前沿模型",
-      kpiSpeedDesc: "每秒 2,100 token 的超高速服务与 180ms 的最低首字延迟",
-      kpiValueDesc: "每百万 token 仅 /bin/zsh.50，提供前沿级编码与推理能力"
+      kpiNewDesc: "近 30 天新加入目录的模型",
+      kpiContextDesc: "每周同步模型中最长的上下文窗口",
+      kpiValueDesc: "主要厂商前沿模型中价格最低 (输入:输出 按 3:1 折算)"
     },
     tco: {
       title: "自托管 TCO 盈亏平衡模拟器",
@@ -1436,9 +1436,9 @@ export const translations: Record<Language, TranslationDictionary> = {
       sortDesc: "▼ Descendente",
       sortAscTitle: "Ordenar de forma ascendente",
       sortDescTitle: "Ordenar de forma descendente",
-      kpiEloDesc: "Modelo frontera nº 1 en LMSYS Chatbot Arena en razonamiento y conocimiento combinados",
-      kpiSpeedDesc: "2.100 tokens por segundo y un tiempo al primer token de 180 ms",
-      kpiValueDesc: "Rendimiento de código y razonamiento de primer nivel por solo 0,50 $ por millón de tokens"
+      kpiNewDesc: "Modelos añadidos al catálogo en los últimos 30 días",
+      kpiContextDesc: "Mayor ventana de contexto entre los modelos sincronizados cada semana",
+      kpiValueDesc: "Modelo frontera más barato de un proveedor principal (mezcla entrada:salida 3:1)"
     },
     tco: {
       title: "Simulador TCO: API SaaS vs GPU Autoalojada",
@@ -1699,9 +1699,9 @@ export const translations: Record<Language, TranslationDictionary> = {
       sortDesc: "▼ Absteigend",
       sortAscTitle: "Aufsteigend sortieren",
       sortDescTitle: "Absteigend sortieren",
-      kpiEloDesc: "Führendes Frontier-Modell in der LMSYS Chatbot Arena für kombiniertes Reasoning und Wissen",
-      kpiSpeedDesc: "2.100 Tokens pro Sekunde bei branchenführenden 180 ms bis zum ersten Token",
-      kpiValueDesc: "Frontier-Leistung bei Code und Reasoning für nur 0,50 $ pro 1 Mio. Tokens"
+      kpiNewDesc: "In den letzten 30 Tagen neu aufgenommene Modelle",
+      kpiContextDesc: "Längstes Kontextfenster unter den wöchentlich synchronisierten Modellen",
+      kpiValueDesc: "Günstigstes Frontier-Modell eines großen Anbieters (Input:Output 3:1)"
     },
     tco: {
       title: "TCO Simulator: SaaS API vs. Self-Hosted GPU",
@@ -1962,9 +1962,9 @@ export const translations: Record<Language, TranslationDictionary> = {
       sortDesc: "▼ Décroissant",
       sortAscTitle: "Trier par ordre croissant",
       sortDescTitle: "Trier par ordre décroissant",
-      kpiEloDesc: "Modèle de pointe classé 1er sur LMSYS Chatbot Arena en raisonnement et connaissances",
-      kpiSpeedDesc: "2 100 tokens par seconde et un délai au premier token de 180 ms",
-      kpiValueDesc: "Performances de pointe en code et raisonnement pour seulement 0,50 $ par million de tokens"
+      kpiNewDesc: "Modèles ajoutés au catalogue au cours des 30 derniers jours",
+      kpiContextDesc: "Plus longue fenêtre de contexte parmi les modèles synchronisés chaque semaine",
+      kpiValueDesc: "Modèle frontière le moins cher d'un grand fournisseur (mélange entrée:sortie 3:1)"
     },
     tco: {
       title: "Simulateur TCO : API SaaS vs GPU Auto-hébergé",
