@@ -24,10 +24,13 @@ export interface QuotaInfo {
 }
 
 export interface BenchmarkScores {
-  arena_elo?: number;
-  mmlu_pro?: number;
-  gpqa?: number;
-  swe_bench?: number;
+  arena_elo?: number | null;      // LMArena 종합 레이팅 (최고 추론 설정 기준)
+  arena_variant?: string | null;  // 점수를 가져온 아레나 항목 이름 (예: claude-fable-5.1-max)
+  gpqa?: number | null;           // Epoch AI GPQA Diamond, 퍼센트
+  // MMLU-Pro·SWE-bench 는 신선한 공개 수집원이 없어 동기화가 null 로 비운다. 화면에 쓰지 않는다.
+  mmlu_pro?: number | null;
+  swe_bench?: number | null;
+  asof?: { arena?: string | null; gpqa?: string | null };
 }
 
 export interface ModelSpec {

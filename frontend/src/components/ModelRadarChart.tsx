@@ -28,9 +28,11 @@ export const ModelRadarChart: React.FC<ModelRadarChartProps> = ({ models }) => {
   if (!models || models.length === 0) return null;
 
   // 정규화 헬퍼 함수 (0 ~ 100 점수 변환)
-  const normalizeElo = (elo?: number) => {
-    if (!elo) return 50;
-    return Math.min(100, Math.max(10, ((elo - 1000) / 400) * 100));
+  // 값이 없으면 0 이다. 예전에는 50 을 돌려줘서 데이터가 없는 모델이 중간 성적처럼 그려졌다.
+  // 척도는 현재 LMArena 범위(하위 10% ~1080, 최고 ~1510)에 맞춘다.
+  const normalizeElo = (elo?: number | null) => {
+    if (!elo) return 0;
+    return Math.min(100, Math.max(0, ((elo - 1000) / 500) * 100));
   };
 
   const normalizeContext = (ctx?: number) => {
@@ -39,15 +41,7 @@ export const ModelRadarChart: React.FC<ModelRadarChartProps> = ({ models }) => {
     return Math.min(100, Math.max(10, ((logCtx - 13) / 7) * 100));
   };
 
-  const normalizeMmluPro = (mmlu?: number) => {
-    if (!mmlu) return 50;
-    return Math.min(100, Math.max(10, mmlu));
-  };
-
-  const normalizeSweBench = (swe?: number) => {
-    if (!swe) return 50;
-    return Math.min(100, Math.max(10, swe * 1.2));
-  };
+  const normalizeGpqa = (gpqa?: number | null) => (gpqa ? Math.min(100, Math.max(0, gpqa)) : 0);
 
   const normalizeCostEfficiency = (inputPricePer1M: number) => {
     if (inputPricePer1M === 0) return 100;
@@ -57,7 +51,7 @@ export const ModelRadarChart: React.FC<ModelRadarChartProps> = ({ models }) => {
 
   const radarData = [
     {
-      subject: '추론 지능 (Arena Elo)',
+      subject: '사용자 선호 (LMArena)',
       fullMark: 100,
       ...models.reduce((acc, m) => {
         acc[m.name] = Math.round(normalizeElo(m.benchmarks?.arena_elo));
@@ -73,18 +67,10 @@ export const ModelRadarChart: React.FC<ModelRadarChartProps> = ({ models }) => {
       }, {} as Record<string, number>)
     },
     {
-      subject: '복합 학술 지식 (MMLU-Pro)',
+      subject: '대학원 수준 추론 (GPQA Diamond)',
       fullMark: 100,
       ...models.reduce((acc, m) => {
-        acc[m.name] = Math.round(normalizeMmluPro(m.benchmarks?.mmlu_pro));
-        return acc;
-      }, {} as Record<string, number>)
-    },
-    {
-      subject: '에이전틱 코딩 (SWE-bench)',
-      fullMark: 100,
-      ...models.reduce((acc, m) => {
-        acc[m.name] = Math.round(normalizeSweBench(m.benchmarks?.swe_bench));
+        acc[m.name] = Math.round(normalizeGpqa(m.benchmarks?.gpqa));
         return acc;
       }, {} as Record<string, number>)
     },

@@ -163,11 +163,14 @@ export function modelPage(m: any, lang: Lang): string {
     [t.license, m.license_type],
     [`${t.pricing} · ${t.input}`, inP],
     [`${t.pricing} · ${t.output}`, outP],
-    ['Arena ELO', num(bench?.arena_elo)],
-    ['MMLU-Pro', bench?.mmlu_pro != null ? String(bench.mmlu_pro) : null],
-    ['GPQA', bench?.gpqa != null ? String(bench.gpqa) : null],
-    ['SWE-bench', bench?.swe_bench != null ? String(bench.swe_bench) : null],
+    // MMLU-Pro·SWE-bench 는 신선한 공개 수집원이 없어 동기화가 비운다. 행을 두지 않는다.
+    ['LMArena', bench?.arena_elo != null ? `${num(bench.arena_elo)}${bench.arena_variant ? ` (${bench.arena_variant})` : ''}` : null],
+    ['GPQA Diamond', bench?.gpqa != null ? `${bench.gpqa}%` : null],
   ];
+  // CC-BY 4.0 출처 표기 의무. 값이 하나라도 있을 때만 붙인다.
+  const benchSource = bench?.arena_elo != null || bench?.gpqa != null
+    ? `<p style="font-size:.8em;color:var(--muted)">LMArena (CC-BY 4.0, best reasoning setting${bench?.asof?.arena ? `, ${esc(bench.asof.arena)}` : ''}) · GPQA Diamond: Epoch AI (CC-BY 4.0)</p>`
+    : '';
 
   const deprecated = Boolean(m.is_deprecated);
   const body = `
@@ -180,6 +183,7 @@ export function modelPage(m: any, lang: Lang): string {
     <div class="tbl-scroll"><table><tbody>
       ${rows.filter(([, v]) => v).map(([k, v]) => `<tr><th>${esc(k)}</th><td>${esc(v)}</td></tr>`).join('\n      ')}
     </tbody></table></div>
+    ${benchSource}
     <a class="cta" href="/?tab=dashboard&amp;lang=${lang}">${esc(t.openApp)}</a>
     <footer>${esc(t.updated)}: ${esc((m.updated_at || '').slice(0, 10))} · <a href="/sitemap.xml">sitemap</a></footer>`;
 

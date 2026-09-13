@@ -39,10 +39,12 @@ OPENROUTER_API_URL = "https://openrouter.ai/api/v1/models"
 #   first_seen_at   — 최초 발견일. "신규 모델" 판정의 유일한 근거라 절대 덮어쓰지 않는다.
 #   is_new          — 더 이상 쓰지 않는다(Worker 가 first_seen_at 으로 계산). 건드리지 않는다.
 #   description_i18n— 설명이 바뀐 경우에만 비워 번역 배치가 다시 채우게 한다.
+#   benchmarks      — 피드는 벤치마크를 주지 않아 항상 null 이다. 덮어쓰면 sync_benchmarks.py 가
+#                     채운 값이 매주 사라진다. 신규 모델은 INSERT 때 null 로 들어간다.
 _UPSERT_COLUMNS = (
     "provider_id", "provider_name", "name", "tier", "is_open_weight", "license_type",
     "parameter_count_b", "architecture", "context_window", "max_output_tokens", "modality",
-    "description", "official_url", "source_docs_url", "api_pricing", "quota", "benchmarks",
+    "description", "official_url", "source_docs_url", "api_pricing", "quota",
     "is_verified", "litellm_id", "supports_reasoning", "supports_web_search", "is_deprecated",
     "hardware_requirements", "source",
 )

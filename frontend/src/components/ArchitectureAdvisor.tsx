@@ -793,7 +793,6 @@ export const ArchitectureAdvisor: React.FC = () => {
                         }`}>
                           {combo.tag}
                         </span>
-                        <span className="text-xs font-black opacity-80">Elo: {combo.avg_arena_elo}</span>
                       </div>
                       <h3 className="font-black text-base leading-tight">{L(combo.name)}</h3>
                       <p className="text-xs leading-relaxed opacity-90">{L(combo.description)}</p>

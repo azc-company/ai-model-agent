@@ -161,7 +161,7 @@ export const CompareView: React.FC<CompareViewProps> = ({
             {/* Benchmarks Arena Elo */}
             <tr>
               <td className="p-4 font-black text-slate-900 dark:text-slate-100 sticky left-0 bg-slate-50 dark:bg-slate-900 z-10">
-                LMSYS Arena Elo
+                LMArena Rating
               </td>
               {comparedModels.map((m) => (
                 <td key={m.id} className="p-4 text-center font-mono font-black text-warn text-base border-l border-slate-200 dark:border-slate-800">
@@ -170,14 +170,14 @@ export const CompareView: React.FC<CompareViewProps> = ({
               ))}
             </tr>
 
-            {/* SWE-bench */}
+            {/* GPQA Diamond — Epoch AI (CC-BY 4.0) */}
             <tr>
               <td className="p-4 font-black text-slate-900 dark:text-slate-100 sticky left-0 bg-slate-50 dark:bg-slate-900 z-10">
-                SWE-bench (Coding)
+                GPQA Diamond
               </td>
               {comparedModels.map((m) => (
                 <td key={m.id} className="p-4 text-center font-mono text-accent font-black border-l border-slate-200 dark:border-slate-800">
-                  {m.benchmarks.swe_bench ? `${m.benchmarks.swe_bench}%` : '-'}
+                  {m.benchmarks.gpqa != null ? `${m.benchmarks.gpqa}%` : '-'}
                 </td>
               ))}
             </tr>

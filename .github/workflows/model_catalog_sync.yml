@@ -57,6 +57,22 @@ jobs:
             SELECT COUNT(*) AS deprecated FROM models WHERE is_deprecated = 1;
           "
 
+      # 벤치마크는 피드가 주지 않는다. LMArena(Arena)·Epoch AI(GPQA) 공개 데이터셋에서 받는다.
+      # 둘 다 CC-BY 4.0 — 화면에 출처를 표기해야 한다. 수집량이 하한에 못 미치면 스크립트가
+      # 빈 SQL 을 남기고 끝나므로, 수집 실패가 멀쩡한 값을 null 로 덮지 않는다.
+      - name: 📊 4.6. 벤치마크 동기화 (LMArena · Epoch AI)
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          pip install -q pyarrow
+          if python3 backend/scripts/sync_benchmarks.py && [ -s seed_benchmarks.sql ]; then
+            npx wrangler d1 execute llm-compass-db --remote --file=seed_benchmarks.sql
+            echo "✅ 벤치마크 갱신 완료"
+          else
+            echo "⚠️ 벤치마크 갱신 건너뜀 (기존 값 유지)"
+          fi
+
       # 이전 회차의 스냅샷(= 그때의 갱신 후 상태)과 지금을 비교한다.
       # 스냅샷을 갱신 '전' 에 찍던 이전 방식은 이번 회차 변경분이 다음 회차에나
       # 담겨 리포트가 항상 한 주기 늦었다 (2026-09-06 실측: +18 이 어느 스냅샷에도
