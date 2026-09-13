@@ -15,7 +15,7 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({ models }) => {
   const [activeBenchmark, setActiveBenchmark] = useState<'arena' | 'gpqa'>('arena');
 
   const rankedModels = useMemo(() => {
-    return [...models]
+    const sorted = [...models]
       .filter((m) => {
         if (activeBenchmark === 'arena') return m.benchmarks.arena_elo != null;
         if (activeBenchmark === 'gpqa') return m.benchmarks.gpqa != null;
@@ -33,6 +33,16 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({ models }) => {
         }
         return scoreB - scoreA;
       });
+    // 같은 모델이 시드 행("Claude Opus 5"), 피드 행("Anthropic: Claude Opus 5"), 배치 채널
+    // ("… (batch)")로 최대 세 번 들어 있다. 점수도 같아서 순위표에 줄지어 반복됐다.
+    // 표시 이름 기준으로 한 번만 보여준다.
+    const seen = new Set<string>();
+    return sorted.filter((m) => {
+      const key = m.name.replace(/^[^:]+:\s*/, '').replace(/\s*\(batch\)\s*$/i, '').trim().toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
   }, [models, activeBenchmark]);
 
   const rankedRows: RankedRow[] = rankedModels.map((model, index) => {
