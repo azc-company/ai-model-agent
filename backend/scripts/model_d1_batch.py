@@ -149,7 +149,7 @@ def convert_model_to_sql(ext: Dict) -> Optional[str]:
     # 피드 설명에 "[DeepSeek V4 Flash 0731](https://openrouter.ai/...)" 같은 마크다운 링크가
     # 섞여 온다. 카드·SEO 페이지는 평문으로 그리므로 괄호와 URL 이 그대로 노출됐고, 번역
     # 엔진도 URL 을 번역하려 들었다. 링크 텍스트만 남긴다.
-    description = re.sub(r"\[([^\]]+)\]\((?:https?://)[^)]*\)", r"\1", description)
+    description = re.sub(r"\[([^\]]+)\]\s*\((?:https?://)[^)]*\)", r"\1", description)
     if len(description) > 500:
         description = description[:497] + "..."
 

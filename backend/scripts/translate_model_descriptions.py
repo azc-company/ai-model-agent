@@ -49,7 +49,7 @@ def detect_lang(text: str) -> str:
 
 def strip_links(text: str) -> str:
     """[텍스트](URL) → 텍스트. 수집 단계에서도 걸러지지만 기존 행을 위해 한 번 더."""
-    return re.sub(r"\[([^\]]+)\]\((?:https?://)[^)]*\)", r"\1", text or "")
+    return re.sub(r"\[([^\]]+)\]\s*\((?:https?://)[^)]*\)", r"\1", text or "")   # 번역 엔진이 ] 와 ( 사이에 공백을 넣는다
 
 
 def _get_json(url: str, opener, attempts: int = 3):

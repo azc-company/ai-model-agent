@@ -52,6 +52,9 @@ class TranslateTest(unittest.TestCase):
     def test_markdown_links_are_flattened_before_translation(self):
         self.assertEqual(tr.strip_links("see [DeepSeek V4 Flash 0731](https://openrouter.ai/x) now"),
                          "see DeepSeek V4 Flash 0731 now")
+        # 번역 엔진이 ] 와 ( 사이에 공백을 넣은 형태 (실측)
+        self.assertEqual(tr.strip_links("DeepSeek의 [DeepSeek V4 Flash 0731] (https://openrouter.ai/x) 기반"),
+                         "DeepSeek의 DeepSeek V4 Flash 0731 기반")
 
 
 class MissingLangsTest(unittest.TestCase):
