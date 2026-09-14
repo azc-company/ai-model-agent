@@ -87,7 +87,7 @@
 
 ### 1. Repository 클론
 ```bash
-git clone https://github.com/azc2004/ai-model-agent.git
+git clone https://github.com/azc-company/ai-model-agent.git
 cd ai-model-agent
 ```
 
