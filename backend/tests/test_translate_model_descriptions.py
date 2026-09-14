@@ -70,13 +70,56 @@ class MissingLangsTest(unittest.TestCase):
 class BuildRowTest(unittest.TestCase):
     def test_failed_languages_are_removed_not_filled_with_source(self):
         row = {"id": "m1", "description": SRC, "description_i18n": json.dumps({l: SRC for l in tr.LANGS})}
-        stmt, filled, failed = tr.build_row(row, translator=lambda t, tgt, s: "번역" if tgt == "ko" else None, pause=0)
+        stmt, filled, failed, _ = tr.build_row(row, translator=lambda t, tgt, s: "번역" if tgt == "ko" else None, pause=0)
         stored = json.loads(stmt.split("description_i18n = '")[1].split("' WHERE")[0].replace("''", "'"))
         self.assertEqual((filled, failed), (1, 5))
         self.assertEqual(stored["ko"], "번역")
         self.assertEqual(stored["en"], SRC)
         for lang in ("ja", "zh", "es", "de", "fr"):
             self.assertNotIn(lang, stored)          # 원문 복사본을 남기지 않는다 → 다음 실행이 재시도
+
+
+class LlmFallbackTest(unittest.TestCase):
+    CFG = type("C", (), {"model": "gemini/x", "fallback_model": "", "litellm_url": "https://gw.test/v1", "litellm_key": "k"})()
+
+    def _opener(self, content, finish="stop"):
+        def opener(req, timeout=None):
+            return _Resp(json.dumps({"choices": [{"finish_reason": finish, "message": {"content": content}}]}).encode())
+        return opener
+
+    def test_only_languages_the_free_engine_failed_go_to_the_llm(self):
+        row = {"id": "m1", "description": SRC, "description_i18n": None}
+        asked = []
+        def llm(text, src, targets):
+            asked.append(list(targets))
+            return {t: f"{t}-LLM" for t in targets}
+        stmt, filled, failed, free_failed = tr.build_row(
+            row, translator=lambda t, tgt, s: "번역" if tgt == "ko" else None, pause=0, llm=llm)
+        self.assertEqual(asked, [["ja", "zh", "es", "de", "fr"]])
+        self.assertEqual((filled, failed, free_failed), (6, 0, 5))
+
+    def test_skip_free_sends_everything_straight_to_the_llm(self):
+        row = {"id": "m1", "description": SRC, "description_i18n": None}
+        called = []
+        _, filled, _, free_failed = tr.build_row(
+            row, translator=lambda *a: called.append(a), pause=0, skip_free=True,
+            llm=lambda text, src, targets: {t: "x" for t in targets})
+        self.assertEqual(called, [])
+        self.assertEqual((filled, free_failed), (6, 0))
+
+    def test_llm_output_must_be_in_the_target_script(self):
+        # ko 에 영어 원문을 돌려주면 번역으로 치지 않는다
+        content = json.dumps({"ko": SRC, "ja": "GLM-5.3 は Z.ai の大規模推論モデルです。", "de": "GLM-5.3 ist ein Modell."})
+        out = tr.llm_translate(SRC, "en", ["ko", "ja", "de"], self.CFG, opener=self._opener(content))
+        self.assertEqual(sorted(out), ["de", "ja"])
+
+    def test_content_filter_yields_nothing(self):
+        out = tr.llm_translate(SRC, "en", ["ko"], self.CFG, opener=self._opener("blocked", finish="content_filter"))
+        self.assertEqual(out, {})
+
+    def test_fenced_json_is_accepted(self):
+        content = "```json\n" + json.dumps({"ko": "GLM-5.3은 Z.ai의 추론 모델입니다."}) + "\n```"
+        self.assertIn("ko", tr.llm_translate(SRC, "en", ["ko"], self.CFG, opener=self._opener(content)))
 
 
 if __name__ == "__main__":

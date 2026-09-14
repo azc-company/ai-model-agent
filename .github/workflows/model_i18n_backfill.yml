@@ -41,6 +41,9 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          # 무료 엔진이 막히면 뉴스 배치와 같은 게이트웨이로 대체 번역한다.
+          # 없으면 무료 엔진만 쓰고, 막힌 행은 다음 주에 재시도한다.
+          LITELLM_API_KEY: ${{ secrets.LITELLM_API_KEY }}
         run: |
           npm install -g wrangler
           LIMIT_ARG=""
