@@ -555,6 +555,10 @@ export default Sentry.withSentry(
       const EVENT_TYPES = new Set(['page_view', 'search', 'compare_add', 'compare_remove', 'external_link_click', 'news_open']);
       // 인증이 없는 엔드포인트라 클라이언트가 보내는 session_id 로는 제한이 무의미하다
       // (그냥 새로 만들면 된다). 실제 비용을 유발하는 주체인 IP 로 제한한다.
+      // 크롤러는 기록하지 않는다. 구글봇은 페이지를 렌더링하며 자바스크립트를 실행해 이 엔드포인트를
+      // 호출한다 — 9/15 이전 30일 세션이 미국 74·한국 12 인데 검색 클릭은 0 이었던 이유다.
+      // 크롤러 방문은 crawler_hits 에 따로 남으므로 봇 분석은 잃지 않는다.
+      if (bot) return new Response(null, { status: 204, headers: { 'Access-Control-Allow-Origin': '*' } });
       const rateKey = request.headers.get('CF-Connecting-IP') || 'unknown';
       const { success } = await env.TRACK_LIMITER.limit({ key: rateKey });
       if (!success) return new Response(null, { status: 429, headers: { 'Access-Control-Allow-Origin': '*' } });
@@ -569,9 +573,12 @@ export default Sentry.withSentry(
         const label = String(body.label || '').slice(0, 200) || null;
         const device = body.device === 'mobile' ? 'mobile' : 'desktop';
         const country = (request as any).cf?.country || null;
+        // 첫 유입 경로(utm_source · 리퍼러 호스트 · direct). 자유 입력이므로 형식을 좁힌다.
+        const rawSource = String(body.source || '').toLowerCase().slice(0, 60);
+        const source = /^[a-z0-9._-]+$/.test(rawSource) ? rawSource : null;
         await env.DB.prepare(
-          'INSERT INTO analytics_events (session_id, event_type, tab, label, device, country) VALUES (?, ?, ?, ?, ?, ?)'
-        ).bind(sessionId, eventType, tab, label, device, country).run();
+          'INSERT INTO analytics_events (session_id, event_type, tab, label, device, country, source) VALUES (?, ?, ?, ?, ?, ?, ?)'
+        ).bind(sessionId, eventType, tab, label, device, country, source).run();
       } catch {
         // 수집 실패가 서비스 이용을 막으면 안 된다 — 조용히 무시
       }
@@ -587,7 +594,7 @@ export default Sentry.withSentry(
         const since = `-${days} days`;
         const db = env.DB;
 
-        const [totals, daily, topTabs, topSearches, topCompared, deviceBreakdown, countryBreakdown, topLinks, topNews, crawlers, crawlerPaths, gscTotals, gscQueries, gscPages] = await Promise.all([
+        const [totals, daily, topTabs, topSearches, topCompared, deviceBreakdown, countryBreakdown, topLinks, topNews, crawlers, crawlerPaths, gscTotals, gscQueries, gscPages, sources, weekly] = await Promise.all([
           db.prepare(`SELECT COUNT(*) AS events, COUNT(DISTINCT session_id) AS sessions FROM analytics_events WHERE created_at >= datetime('now', ?)`).bind(since).first(),
           db.prepare(`SELECT date(created_at) AS day, COUNT(*) AS events, COUNT(DISTINCT session_id) AS sessions FROM analytics_events WHERE created_at >= datetime('now', ?) GROUP BY day ORDER BY day ASC`).bind(since).all(),
           db.prepare(`SELECT tab AS label, COUNT(*) AS count FROM analytics_events WHERE event_type = 'page_view' AND created_at >= datetime('now', ?) AND tab IS NOT NULL GROUP BY tab ORDER BY count DESC LIMIT 10`).bind(since).all(),
@@ -613,6 +620,21 @@ export default Sentry.withSentry(
                              ROUND(AVG(position), 1) AS position
                       FROM gsc_metrics WHERE dimension = 'page' AND date >= date('now', ?)
                       GROUP BY value ORDER BY impressions DESC LIMIT 15`).bind(since).all(),
+          // 첫 유입 경로별 세션. 9/15 이전 행은 source 가 없다(봇 혼입 구간이기도 하다).
+          db.prepare(`SELECT COALESCE(source, '(기록 전)') AS label, COUNT(DISTINCT session_id) AS count
+                      FROM analytics_events WHERE created_at >= datetime('now', ?)
+                      GROUP BY label ORDER BY count DESC LIMIT 10`).bind(since).all(),
+          // 주간 핵심 지표: 최근 7일 vs 그 전 7일. GSC 는 2~3일 늦게 확정되므로 수집된 최신 날짜 기준으로 자른다.
+          db.prepare(`SELECT
+              (SELECT COUNT(DISTINCT session_id) FROM analytics_events WHERE created_at >= datetime('now','-7 days')) AS sessions,
+              (SELECT COUNT(DISTINCT session_id) FROM analytics_events WHERE created_at >= datetime('now','-14 days') AND created_at < datetime('now','-7 days')) AS sessions_prev,
+              (SELECT MAX(date) FROM gsc_metrics) AS gsc_latest,
+              (SELECT COALESCE(SUM(impressions),0) FROM gsc_metrics WHERE dimension='query' AND date > date((SELECT MAX(date) FROM gsc_metrics), '-7 days')) AS impressions,
+              (SELECT COALESCE(SUM(impressions),0) FROM gsc_metrics WHERE dimension='query' AND date > date((SELECT MAX(date) FROM gsc_metrics), '-14 days') AND date <= date((SELECT MAX(date) FROM gsc_metrics), '-7 days')) AS impressions_prev,
+              (SELECT COALESCE(SUM(clicks),0) FROM gsc_metrics WHERE dimension='query' AND date > date((SELECT MAX(date) FROM gsc_metrics), '-7 days')) AS clicks,
+              (SELECT COALESCE(SUM(clicks),0) FROM gsc_metrics WHERE dimension='query' AND date > date((SELECT MAX(date) FROM gsc_metrics), '-14 days') AND date <= date((SELECT MAX(date) FROM gsc_metrics), '-7 days')) AS clicks_prev,
+              (SELECT COUNT(DISTINCT value) FROM gsc_metrics WHERE dimension='page' AND date > date((SELECT MAX(date) FROM gsc_metrics), '-28 days')) AS pages_28d
+            `).first(),
         ]);
 
         return new Response(JSON.stringify({
@@ -631,6 +653,8 @@ export default Sentry.withSentry(
           gsc_totals: gscTotals || { clicks: 0, impressions: 0, position: null, latest: null },
           gsc_queries: gscQueries.results,
           gsc_pages: gscPages.results,
+          sources: sources.results,
+          weekly: weekly || null,
         }), { headers: { 'Content-Type': 'application/json' } });
       } catch (err: any) {
         return fail(err);

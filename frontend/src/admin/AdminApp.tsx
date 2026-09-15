@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { API_BASE_URL } from '../api';
+import { markInternal } from '../analytics';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 interface CountRow { label: string; count: number }
@@ -21,6 +22,52 @@ interface Summary {
   gsc_totals: { clicks: number; impressions: number; position: number | null; latest: string | null };
   gsc_queries: SearchRow[];
   gsc_pages: SearchRow[];
+  sources?: CountRow[];
+  weekly?: Weekly | null;
+}
+
+// 최근 7일 vs 그 전 7일. 6주 전략의 북극성(실사용 세션)과 검색 지표를 한 줄로 본다.
+type Weekly = {
+  sessions: number; sessions_prev: number;
+  impressions: number; impressions_prev: number;
+  clicks: number; clicks_prev: number;
+  pages_28d: number; gsc_latest: string | null;
+};
+
+// 봇·내부 방문 제외 집계를 시작한 날. 이전 수치는 구글봇 렌더링이 사람 방문으로 섞여 있다.
+const CLEAN_TRACKING_SINCE = '2026-09-15';
+
+function WeeklyCard({ w }: { w: Weekly }) {
+  const delta = (now: number, prev: number) => {
+    if (!prev) return now ? '신규' : '—';
+    const pct = Math.round(((now - prev) / prev) * 100);
+    return `${pct >= 0 ? '+' : ''}${pct}%`;
+  };
+  const items: Array<[string, number, string]> = [
+    ['실사용 세션', w.sessions, delta(w.sessions, w.sessions_prev)],
+    ['검색 노출', w.impressions, delta(w.impressions, w.impressions_prev)],
+    ['검색 클릭', w.clicks, delta(w.clicks, w.clicks_prev)],
+    ['노출 발생 페이지 (28일)', w.pages_28d, ''],
+  ];
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+        <h3 className="text-sm font-black text-slate-900">🧭 주간 핵심 지표 · 최근 7일 vs 이전 7일</h3>
+        <p className="text-2xs text-muted">
+          세션은 {CLEAN_TRACKING_SINCE} 부터 봇·내부 방문 제외 · 검색은 GSC 최신 {w.gsc_latest ?? '—'} 기준
+        </p>
+      </div>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {items.map(([label, value, d]) => (
+          <div key={label}>
+            <div className="text-2xs font-bold text-muted">{label}</div>
+            <div className="text-2xl font-black text-slate-900 numeric">{value.toLocaleString()}</div>
+            {d && <div className="text-2xs font-bold text-muted numeric">{d}</div>}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 // Search Console 실적. crawler_hits 가 "누가 왔나" 라면 이건 "검색에서 어떻게 보이나" 다.
@@ -96,6 +143,9 @@ export const AdminApp: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // 어드민을 여는 브라우저는 운영자다. 이후 사이트 방문을 실사용 집계에서 뺀다.
+  useEffect(() => { markInternal(true); }, []);
+
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
@@ -137,6 +187,8 @@ export const AdminApp: React.FC = () => {
 
         {loading && <p className="text-sm text-muted">불러오는 중…</p>}
         {error && <p className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-bold text-danger">{error}</p>}
+
+        {data?.weekly && <WeeklyCard w={data.weekly} />}
 
         {data && (
           <>
@@ -204,6 +256,7 @@ export const AdminApp: React.FC = () => {
                 )}
               </div>
 
+              <RankedList title="🚪 첫 유입 경로 (세션)" rows={data.sources ?? []} emptyLabel="기록 없음 — 9/15 배포 이후부터 쌓인다" />
               <RankedList title="🕸️ 크롤러가 많이 읽은 경로" rows={data.crawler_paths ?? []} />
 
               <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">

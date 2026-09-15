@@ -47,6 +47,19 @@ test('shows a readable message on 401', async () => {
 
 // GSC 실적은 배포 직후 몇 주간 비어 있어 실측으로 확인할 수 없다. 두 경로를
 // 모두 테스트로 고정해 둔다.
+test('shows the weekly KPI card with week-over-week change', async () => {
+  const withWeekly = { ...SUMMARY, sources: [{ label: 'disquiet', count: 5 }],
+    weekly: { sessions: 30, sessions_prev: 20, impressions: 300, impressions_prev: 0, clicks: 4, clicks_prev: 2, pages_28d: 57, gsc_latest: '2026-09-12' } };
+  vi.stubGlobal('fetch', vi.fn(() => Promise.resolve(new Response(JSON.stringify(withWeekly), { status: 200 }))));
+  render(<AdminApp />);
+  await waitFor(() => expect(screen.getByText(/주간 핵심 지표/)).toBeInTheDocument());
+  expect(screen.getByText('+50%')).toBeInTheDocument();      // 세션 30 vs 20
+  expect(screen.getByText('신규')).toBeInTheDocument();       // 이전 주 노출 0
+  expect(screen.getByText('57')).toBeInTheDocument();
+  expect(screen.getByText('disquiet')).toBeInTheDocument();
+  expect(localStorage.getItem('llmc_internal')).toBe('1');   // 어드민을 연 브라우저는 내부 방문으로 표시
+});
+
 test('shows a waiting message while Search Console has no data', async () => {
   render(<AdminApp />);
   await waitFor(() => expect(screen.getByText('🔎 검색 유입 (Search Console)')).toBeInTheDocument());

@@ -162,3 +162,7 @@ CREATE INDEX IF NOT EXISTS idx_gsc_dim_date ON gsc_metrics(dimension, date DESC)
 -- 2026-09-13: 카탈로그 최초 발견일. 동기화(ON CONFLICT DO UPDATE)가 덮어쓰지 않는다.
 -- Worker 가 이 값으로 "신규 모델"(30일 이내)을 계산한다. is_new 컬럼은 더 이상 쓰지 않는다.
 ALTER TABLE models ADD COLUMN first_seen_at TEXT;
+
+-- 2026-09-15: 첫 유입 경로. utm_source 가 있으면 그것, 없으면 리퍼러 호스트, 둘 다 없으면 'direct'.
+-- 채널(디스콰이엇·긱뉴스·레딧)별 효과를 가르기 위해 둔다.
+ALTER TABLE analytics_events ADD COLUMN source TEXT;
