@@ -342,6 +342,13 @@ export default Sentry.withSentry(
       const id = decodeURIComponent(url.pathname.slice('/models/'.length));
       const row: any = await env.DB.prepare('SELECT * FROM models WHERE id = ?').bind(id).first();
       if (!row) return new Response('Not Found', { status: 404 });
+      // 시드·동기화 이중 등록을 정리하며 시드 행에 대체 id 를 남겼다. 이미 색인된 옛 주소의
+      // 신호를 잃지 않도록 영구 리다이렉트한다(?lang 등 쿼리는 유지).
+      if (row.superseded_by && row.superseded_by !== id) {
+        const to = new URL(`/models/${encodeURIComponent(row.superseded_by)}`, url.origin);
+        to.search = url.search;
+        return Response.redirect(to.toString(), 301);
+      }
       return new Response(seo.modelPage(row, seo.pickLang(url.searchParams.get('lang'))), { headers: HTML });
     }
 

@@ -166,3 +166,7 @@ ALTER TABLE models ADD COLUMN first_seen_at TEXT;
 -- 2026-09-15: 첫 유입 경로. utm_source 가 있으면 그것, 없으면 리퍼러 호스트, 둘 다 없으면 'direct'.
 -- 채널(디스콰이엇·긱뉴스·레딧)별 효과를 가르기 위해 둔다.
 ALTER TABLE analytics_events ADD COLUMN source TEXT;
+
+-- 2026-09-15: 시드·동기화 이중 등록 정리. 시드 행을 지우지 않고 대체한 동기화 id 를 남긴다.
+-- Worker 가 /models/<시드 id> 를 /models/<superseded_by> 로 301 리다이렉트한다.
+ALTER TABLE models ADD COLUMN superseded_by TEXT;
