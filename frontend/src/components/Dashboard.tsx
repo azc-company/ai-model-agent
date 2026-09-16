@@ -598,6 +598,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     {model.description}
                   </p>
 
+                  {/* 주간 동기화 대상이 아닌 모델(초기 수작업 데이터)은 가격이 오래됐을 수 있다.
+                      숨기지 않고 마지막 확인 날짜를 드러낸다. */}
+                  {model.source && model.source !== 'feed' && model.updated_at && (
+                    <p className="-mt-3 mb-4 text-2xs font-bold text-muted">
+                      ⏳ 마지막 확인 {model.updated_at.slice(0, 10)}
+                    </p>
+                  )}
+
                   {/* Quota Information Box */}
                   {model.quota && (model.quota.rpm !== undefined || model.quota.tpm !== undefined) && (
                     <div className="bg-cyan-50 dark:bg-cyan-950/80 border border-cyan-200 dark:border-cyan-500/40 rounded-xl p-3 mb-4 text-xs shadow-inner">

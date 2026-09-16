@@ -33,31 +33,31 @@ const T: Record<Lang, Record<string, string>> = {
   ko: { provider: '프로바이더', tier: '등급', ctx: '컨텍스트 윈도우', out: '최대 출력', license: '라이선스',
         pricing: '' + 'API 가격 (100만 토큰당)', input: '입력', output: '출력', bench: '벤치마크',
         openApp: '전체 카탈로그에서 비교하기', updated: '갱신', tokens: '토큰', home: 'LLM COMPASS',
-        allModels: '전체 모델', news: 'AI 트렌드 뉴스', source: '출처', backHome: '카탈로그로', mentioned: '기사에 언급된 모델', figures: '확인된 수치', ourTake: '우리 관점', openQ: '아직 확인되지 않은 것', changelog: '업데이트 노트', changesIn: '이번 기간 변경', allUpdates: '전체 업데이트', deprecated: '지원 중단', deprecatedNote: '이 모델은 더 이상 제공되지 않습니다. 아래 정보는 마지막으로 확인된 시점의 값입니다.' },
+        allModels: '전체 모델', news: 'AI 트렌드 뉴스', source: '출처', backHome: '카탈로그로', mentioned: '기사에 언급된 모델', figures: '확인된 수치', ourTake: '우리 관점', openQ: '아직 확인되지 않은 것', changelog: '업데이트 노트', changesIn: '이번 기간 변경', allUpdates: '전체 업데이트', deprecated: '지원 중단', deprecatedNote: '이 모델은 더 이상 제공되지 않습니다. 아래 정보는 마지막으로 확인된 시점의 값입니다.', staleNote: '주간 자동 동기화 대상이 아닌 모델입니다. 아래 값은 {d} 에 확인한 것입니다.' },
   en: { provider: 'Provider', tier: 'Tier', ctx: 'Context window', out: 'Max output', license: 'License',
         pricing: 'API pricing (per 1M tokens)', input: 'Input', output: 'Output', bench: 'Benchmarks',
         openApp: 'Compare in the full catalog', updated: 'Updated', tokens: 'tokens', home: 'LLM COMPASS',
-        allModels: 'All models', news: 'AI trend news', source: 'Source', backHome: 'Back to catalog', mentioned: 'Models mentioned', figures: 'Verified figures', ourTake: 'Our take', openQ: 'Open questions', changelog: 'Update notes', changesIn: 'Changes in this period', allUpdates: 'All updates', deprecated: 'Discontinued', deprecatedNote: 'This model is no longer offered. The figures below are from the last time it was confirmed.' },
+        allModels: 'All models', news: 'AI trend news', source: 'Source', backHome: 'Back to catalog', mentioned: 'Models mentioned', figures: 'Verified figures', ourTake: 'Our take', openQ: 'Open questions', changelog: 'Update notes', changesIn: 'Changes in this period', allUpdates: 'All updates', deprecated: 'Discontinued', deprecatedNote: 'This model is no longer offered. The figures below are from the last time it was confirmed.', staleNote: 'This model is not part of the weekly automatic sync. The figures below were confirmed on {d}.' },
   ja: { provider: 'プロバイダー', tier: 'ティア', ctx: 'コンテキスト長', out: '最大出力', license: 'ライセンス',
         pricing: 'API 料金 (100万トークンあたり)', input: '入力', output: '出力', bench: 'ベンチマーク',
         openApp: 'カタログ全体で比較する', updated: '更新', tokens: 'トークン', home: 'LLM COMPASS',
-        allModels: '全モデル', news: 'AIトレンドニュース', source: '出典', backHome: 'カタログへ', mentioned: '記事で言及されたモデル', figures: '確認された数値', ourTake: '編集部の見解', openQ: '未確認の点', changelog: 'アップデートノート', changesIn: 'この期間の変更', allUpdates: 'すべての更新', deprecated: '提供終了', deprecatedNote: 'このモデルは現在提供されていません。以下は最後に確認された時点の値です。' },
+        allModels: '全モデル', news: 'AIトレンドニュース', source: '出典', backHome: 'カタログへ', mentioned: '記事で言及されたモデル', figures: '確認された数値', ourTake: '編集部の見解', openQ: '未確認の点', changelog: 'アップデートノート', changesIn: 'この期間の変更', allUpdates: 'すべての更新', deprecated: '提供終了', deprecatedNote: 'このモデルは現在提供されていません。以下は最後に確認された時点の値です。', staleNote: 'このモデルは週次自動同期の対象外です。以下の数値は {d} 時点の確認値です。' },
   zh: { provider: '供应商', tier: '等级', ctx: '上下文窗口', out: '最大输出', license: '许可',
         pricing: 'API 价格（每百万 token）', input: '输入', output: '输出', bench: '基准测试',
         openApp: '在完整目录中比较', updated: '更新', tokens: 'token', home: 'LLM COMPASS',
-        allModels: '全部模型', news: 'AI 趋势新闻', source: '来源', backHome: '返回目录', mentioned: '文中提及的模型', figures: '已核实数据', ourTake: '我们的观点', openQ: '尚未确认', changelog: '更新说明', changesIn: '本期变更', allUpdates: '全部更新', deprecated: '已停止提供', deprecatedNote: '该模型已不再提供。以下为最后一次确认时的数据。' },
+        allModels: '全部模型', news: 'AI 趋势新闻', source: '来源', backHome: '返回目录', mentioned: '文中提及的模型', figures: '已核实数据', ourTake: '我们的观点', openQ: '尚未确认', changelog: '更新说明', changesIn: '本期变更', allUpdates: '全部更新', deprecated: '已停止提供', deprecatedNote: '该模型已不再提供。以下为最后一次确认时的数据。', staleNote: '该模型不在每周自动同步范围内。以下数据的确认时间为 {d}。' },
   es: { provider: 'Proveedor', tier: 'Nivel', ctx: 'Ventana de contexto', out: 'Salida máxima', license: 'Licencia',
         pricing: 'Precio de API (por 1M de tokens)', input: 'Entrada', output: 'Salida', bench: 'Benchmarks',
         openApp: 'Comparar en el catálogo completo', updated: 'Actualizado', tokens: 'tokens', home: 'LLM COMPASS',
-        allModels: 'Todos los modelos', news: 'Noticias de IA', source: 'Fuente', backHome: 'Volver al catálogo', mentioned: 'Modelos mencionados', figures: 'Cifras verificadas', ourTake: 'Nuestra opinión', openQ: 'Preguntas abiertas', changelog: 'Notas de actualización', changesIn: 'Cambios del periodo', allUpdates: 'Todas las actualizaciones', deprecated: 'Descontinuado', deprecatedNote: 'Este modelo ya no se ofrece. Los datos siguientes corresponden a la última confirmación.' },
+        allModels: 'Todos los modelos', news: 'Noticias de IA', source: 'Fuente', backHome: 'Volver al catálogo', mentioned: 'Modelos mencionados', figures: 'Cifras verificadas', ourTake: 'Nuestra opinión', openQ: 'Preguntas abiertas', changelog: 'Notas de actualización', changesIn: 'Cambios del periodo', allUpdates: 'Todas las actualizaciones', deprecated: 'Descontinuado', deprecatedNote: 'Este modelo ya no se ofrece. Los datos siguientes corresponden a la última confirmación.', staleNote: 'Este modelo no entra en la sincronización semanal automática. Los datos se confirmaron el {d}.' },
   de: { provider: 'Anbieter', tier: 'Stufe', ctx: 'Kontextfenster', out: 'Max. Ausgabe', license: 'Lizenz',
         pricing: 'API-Preis (pro 1 Mio. Tokens)', input: 'Eingabe', output: 'Ausgabe', bench: 'Benchmarks',
         openApp: 'Im vollständigen Katalog vergleichen', updated: 'Aktualisiert', tokens: 'Tokens', home: 'LLM COMPASS',
-        allModels: 'Alle Modelle', news: 'KI-Trendnachrichten', source: 'Quelle', backHome: 'Zurück zum Katalog', mentioned: 'Erwähnte Modelle', figures: 'Belegte Zahlen', ourTake: 'Unsere Einschätzung', openQ: 'Offene Fragen', changelog: 'Update-Notizen', changesIn: 'Änderungen im Zeitraum', allUpdates: 'Alle Updates', deprecated: 'Eingestellt', deprecatedNote: 'Dieses Modell wird nicht mehr angeboten. Die Angaben stammen von der letzten Bestätigung.' },
+        allModels: 'Alle Modelle', news: 'KI-Trendnachrichten', source: 'Quelle', backHome: 'Zurück zum Katalog', mentioned: 'Erwähnte Modelle', figures: 'Belegte Zahlen', ourTake: 'Unsere Einschätzung', openQ: 'Offene Fragen', changelog: 'Update-Notizen', changesIn: 'Änderungen im Zeitraum', allUpdates: 'Alle Updates', deprecated: 'Eingestellt', deprecatedNote: 'Dieses Modell wird nicht mehr angeboten. Die Angaben stammen von der letzten Bestätigung.', staleNote: 'Dieses Modell ist nicht Teil der wöchentlichen automatischen Synchronisierung. Die Werte wurden am {d} bestätigt.' },
   fr: { provider: 'Fournisseur', tier: 'Niveau', ctx: 'Fenêtre de contexte', out: 'Sortie max.', license: 'Licence',
         pricing: 'Tarif API (par million de tokens)', input: 'Entrée', output: 'Sortie', bench: 'Benchmarks',
         openApp: 'Comparer dans le catalogue complet', updated: 'Mis à jour', tokens: 'tokens', home: 'LLM COMPASS',
-        allModels: 'Tous les modèles', news: 'Actualités IA', source: 'Source', backHome: 'Retour au catalogue', mentioned: 'Modèles mentionnés', figures: 'Chiffres vérifiés', ourTake: 'Notre avis', openQ: 'Questions ouvertes', changelog: 'Notes de mise à jour', changesIn: 'Changements de la période', allUpdates: 'Toutes les mises à jour', deprecated: 'Abandonné', deprecatedNote: 'Ce modèle n’est plus proposé. Les données ci-dessous datent de la dernière vérification.' },
+        allModels: 'Tous les modèles', news: 'Actualités IA', source: 'Source', backHome: 'Retour au catalogue', mentioned: 'Modèles mentionnés', figures: 'Chiffres vérifiés', ourTake: 'Notre avis', openQ: 'Questions ouvertes', changelog: 'Notes de mise à jour', changesIn: 'Changements de la période', allUpdates: 'Toutes les mises à jour', deprecated: 'Abandonné', deprecatedNote: 'Ce modèle n’est plus proposé. Les données ci-dessous datent de la dernière vérification.', staleNote: 'Ce modèle ne fait pas partie de la synchronisation hebdomadaire automatique. Les valeurs ont été confirmées le {d}.' },
 };
 
 const STYLE = `
@@ -153,6 +153,9 @@ export function modelPage(m: any, lang: Lang): string {
     m.context_window ? `${t.ctx} ${num(m.context_window)} ${t.tokens}.` : '',
     inP && outP ? `${t.pricing}: ${t.input} ${inP}, ${t.output} ${outP}.` : '',
     m.license_type ? `${t.license}: ${m.license_type}.` : '',
+    // 검색 결과에 숫자가 보이면 클릭 이유가 된다. 있는 경우에만 붙인다.
+    bench?.arena_elo != null ? `LMArena ${num(bench.arena_elo)}.` : '',
+    bench?.gpqa != null ? `GPQA Diamond ${bench.gpqa}%.` : '',
   ].filter(Boolean).join(' ');
 
   const rows: Array<[string, string | null]> = [
@@ -177,6 +180,8 @@ export function modelPage(m: any, lang: Lang): string {
     <nav><a href="/?lang=${lang}">${t.home}</a> › <a href="/?tab=dashboard&amp;lang=${lang}">${t.allModels}</a></nav>
     <h1>${esc(m.name)}${deprecated ? ` <span style="font-size:.5em;vertical-align:middle;color:#b45309">(${esc(t.deprecated)})</span>` : ''}</h1>
     ${deprecated ? `<p style="border-left:3px solid #b45309;padding-left:.9rem;color:var(--muted)">${esc(t.deprecatedNote)}</p>` : ''}
+    ${!deprecated && m.source !== 'feed' ? `<p style="border-left:3px solid #64748b;padding-left:.9rem;color:var(--muted)">${
+      esc((t.staleNote || '').replace('{d}', (m.updated_at || '').slice(0, 10)))}</p>` : ''}
     <p class="lede">${esc(desc)}</p>
     <p>${esc(facts)}</p>
     <h2>${esc(t.bench)} · ${esc(t.pricing)}</h2>
@@ -204,7 +209,10 @@ export function modelPage(m: any, lang: Lang): string {
 
   return shell({
     lang, path: `/models/${m.id}`, body, jsonLd, noindex: deprecated,
-    title: `${m.name} — ${t.pricing.replace(/\s*\(.*\)/, '')} · ${m.provider_name} | LLM COMPASS`,
+    // 실제로 노출되는 검색어가 "gemini flash api", "z-api pricing" 형태다. 제목을 그 모양에
+    // 맞춘다. 모델명에 이미 프로바이더가 들어 있으면("Google: Gemini 3.8 Flash") 다시 쓰지 않는다.
+    title: `${m.name}${m.name.includes(':') ? '' : ` · ${m.provider_name}`} API ${
+      t.pricing.replace(/^[^ ]+ /, '').replace(/\s*\(.*\)/, '')} · ${t.ctx} | LLM COMPASS`,
     description: facts.slice(0, 300),
   });
 }

@@ -30,6 +30,12 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from sync_benchmarks import keys  # noqa: E402
 
 OUT = "seed_dedupe.sql"
+# 변형 단어 규칙이 보수적으로 보류하지만 사람이 확인해 같은 모델인 경우.
+# 규칙을 느슨하게 풀면 Sonar Reasoning→Sonar 같은 오탐이 함께 살아나므로 예외만 적는다.
+MANUAL_PAIRS = {
+    "deepseek-r1": "deepseek-deepseek-r1",   # 시드 "DeepSeek R1 (Reasoning)" ↔ 피드 "DeepSeek: R1"
+}
+
 VARIANT_WORDS = {"preview", "reasoning", "high", "low", "thinking", "exp", "experimental", "mini", "pro", "max", "lite", "turbo"}
 
 
@@ -53,7 +59,12 @@ def pair_seed_to_feed(rows):
             index[keys(n)[0]][f["id"]] = f
 
     pairs, skipped = [], []
+    feed_ids = {f["id"] for f in feed}
     for s in seed:
+        manual = MANUAL_PAIRS.get(s["id"])
+        if manual and manual in feed_ids:
+            pairs.append((s["id"], manual))
+            continue
         cands = {}
         for n in (s["id"], s["name"]):
             cands.update(index.get(keys(n)[0], {}))
