@@ -102,13 +102,19 @@ def extract_provider(raw_id: str) -> tuple:
     """모델 ID에서 provider_id, provider_name 추출"""
     parts = raw_id.split("/")
     if len(parts) > 1:
-        pid = parts[0].lower()
+        # OpenRouter 는 "항상 최신" 라우트에 "~openai/gpt-astra-latest" 처럼 ~ 를 붙인다.
+        # 다른 회사가 아니라 같은 회사의 별칭 경로다. 떼지 않으면 정규화 맵을 비껴가서
+        # 카탈로그에 "OpenAI" 와 "~openai" 가 따로 잡혔다.
+        pid = parts[0].lower().lstrip("~")
         pname = parts[0].capitalize()
     else:
         pid = "other"
         pname = "Other"
 
-    # 주요 프로바이더 이름 정규화
+    # 주요 프로바이더 이름 정규화.
+    # 맵에 없으면 .capitalize() 로 떨어지는데, 그게 "moonshotai" → "Moonshotai",
+    # "z-ai" → "Z-ai" 처럼 회사가 실제로 쓰는 표기를 뭉갠다. 모델 페이지 제목과
+    # 공급사 필터에 그대로 나가므로 검색에도 손해다. 모델 수가 있는 곳은 적어둔다.
     provider_map = {
         "openai": "OpenAI",
         "anthropic": "Anthropic",
@@ -124,6 +130,31 @@ def extract_provider(raw_id: str) -> tuple:
         "amazon": "Amazon",
         "perplexity": "Perplexity",
         "together": "Together AI",
+        "z-ai": "Z.ai",
+        "moonshotai": "Moonshot AI",
+        "inclusionai": "inclusionAI",
+        "bytedance-seed": "ByteDance Seed",
+        "bytedance": "ByteDance",
+        "thinkingmachines": "Thinking Machines",
+        "openrouter": "OpenRouter",
+        "nex-agi": "Nex AGI",
+        "inference-net": "Inference.net",
+        "minimax": "MiniMax",
+        "stepfun": "StepFun",
+        "rekaai": "Reka AI",
+        "nousresearch": "Nous Research",
+        "allenai": "Allen AI",
+        "ai21": "AI21 Labs",
+        "ibm-granite": "IBM Granite",
+        "arcee-ai": "Arcee AI",
+        "aion-labs": "AION Labs",
+        "deepcogito": "Deep Cogito",
+        "cognitivecomputations": "Cognitive Computations",
+        "anthracite-org": "Anthracite",
+        "kwaipilot": "KwaiPilot",
+        "sao10k": "Sao10K",
+        "thedrummer": "TheDrummer",
+        "dots-studio": "Dots Studio",
     }
     pname = provider_map.get(pid, pname)
     return pid, pname
@@ -196,6 +227,11 @@ def convert_model_to_sql(ext: Dict) -> Optional[str]:
     # INSERT OR REPLACE 는 충돌 시 행을 지우고 다시 넣는다. 그래서 컬럼 목록에 없는
     # description_i18n 이 매주 NULL 로 날아가고(번역 배치가 430건을 다시 번역했다),
     # 최초 발견일도 남길 방법이 없었다. ON CONFLICT 로 필요한 컬럼만 갱신한다.
+    #
+    # source_docs_url 은 빈 문자열로 둔다. 피드에 진짜 공식 문서 URL 이 없어서 예전엔
+    # playground?model=... 을 넣었는데, OpenRouter 가 그 파라미터를 무시해 485개 모델의
+    # "공식 문서" 버튼이 전부 같은 화면으로 갔다. 비우면 프론트가 official_url(모델 페이지)
+    # 로 폴백한다.
     sql = f"""INSERT INTO models (
   id, provider_id, provider_name, name, tier, is_open_weight, license_type,
   parameter_count_b, architecture, context_window, max_output_tokens, modality,
@@ -217,7 +253,7 @@ def convert_model_to_sql(ext: Dict) -> Optional[str]:
   '{escape_sql(json.dumps(modality, ensure_ascii=False))}',
   '{escape_sql(description)}',
   '{escape_sql(f"https://openrouter.ai/models/{raw_id}")}',
-  '{escape_sql(f"https://openrouter.ai/playground?model={raw_id}")}',
+  '',
   '{escape_sql(json.dumps(api_pricing, ensure_ascii=False))}',
   '{escape_sql(json.dumps({}, ensure_ascii=False))}',
   '{escape_sql(json.dumps({"arena_elo": None, "mmlu_pro": None, "gpqa": None, "swe_bench": None}, ensure_ascii=False))}',
