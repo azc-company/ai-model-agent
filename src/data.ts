@@ -17,7 +17,7 @@ export const PROVIDERS = [
   },
   {
     "id": "google",
-    "name": "Google AI",
+    "name": "Google",
     "website": "https://deepmind.google",
     "logo_url": "https://upload.wikimedia.org/wikipedia/commons/2/2f/Google_2015_logo.svg",
     "description": "초대형 200만 컨텍스트 및 네이티브 멀티모달 Gemini / Gemma 전체 라인업",
@@ -41,15 +41,15 @@ export const PROVIDERS = [
   },
   {
     "id": "meta",
-    "name": "Meta AI",
+    "name": "Meta",
     "website": "https://ai.meta.com",
     "logo_url": "https://upload.wikimedia.org/wikipedia/commons/7/7b/Meta_Platforms_Inc._logo.svg",
     "description": "글로벌 오픈웨이트 생태계를 주도하는 Llama 4 / 3.3 / 3.2 / 3.1 / 3 / 2 및 Code Llama 전시리즈",
     "official_docs_url": "https://llama.meta.com/docs/model-cards-and-prompt-formats"
   },
   {
-    "id": "alibaba",
-    "name": "Alibaba Cloud (Qwen)",
+    "id": "qwen",
+    "name": "Alibaba Qwen",
     "website": "https://qwenlm.github.io",
     "logo_url": "https://qwenlm.github.io/assets/logo.png",
     "description": "다국어, 코딩, VL 및 에이전트에 강력한 Qwen 3.6 / 2.5 / Coder / VL 전 시리즈",
@@ -81,23 +81,23 @@ export const PROVIDERS = [
   },
   {
     "id": "perplexity",
-    "name": "Perplexity AI",
+    "name": "Perplexity",
     "website": "https://perplexity.ai",
     "logo_url": "https://perplexity.ai/favicon.ico",
     "description": "실시간 웹 검색 통합 및 논리 추론 특화 Sonar Pro / Reasoning / Small",
     "official_docs_url": "https://docs.perplexity.ai/guides/model-cards"
   },
   {
-    "id": "zhipu",
-    "name": "Zhipu AI (GLM)",
+    "id": "z-ai",
+    "name": "Z.ai",
     "website": "https://zhipuai.cn",
     "logo_url": "https://zhipuai.cn/logo.png",
     "description": "에이전트 코딩 및 중국어/영어 특화 GLM-5.2 / GLM-4 Plus / Air / Flash / Long",
     "official_docs_url": "https://open.bigmodel.cn/dev/howuse/model"
   },
   {
-    "id": "moonshot",
-    "name": "Moonshot AI (Kimi)",
+    "id": "moonshotai",
+    "name": "Moonshot AI",
     "website": "https://moonshot.cn",
     "logo_url": "https://moonshot.cn/favicon.ico",
     "description": "초장문 200만 컨텍스트 및 MoE 추론 특화 Kimi K2.7 / K1.5 / v1-128k",
