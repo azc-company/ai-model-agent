@@ -16,7 +16,7 @@ export const CodeSnippetModal = ({ model, onClose }: CodeSnippetModalProps) => {
 
   if (!model) return null;
 
-  const snippet = getCodeSnippetForModel(model.id, model.name, model.provider_id);
+  const snippet = getCodeSnippetForModel(model);
 
   const getCode = () => {
     switch (activeTab) {
@@ -62,7 +62,8 @@ export const CodeSnippetModal = ({ model, onClose }: CodeSnippetModalProps) => {
                 </span>
                 <h2 className="text-lg font-bold text-white">{model.name}</h2>
               </div>
-              <p className="text-xs text-muted font-mono mt-0.5">Model ID: {model.id}</p>
+              {/* 카탈로그 내부 id(openai-gpt-5.6-luna)가 아니라 코드에 실제로 들어가는 값을 보여준다. */}
+              <p className="text-xs text-muted font-mono mt-0.5">Model ID: {snippet.apiModelId}</p>
             </div>
           </div>
           <button
