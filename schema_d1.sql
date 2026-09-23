@@ -170,3 +170,29 @@ ALTER TABLE analytics_events ADD COLUMN source TEXT;
 -- 2026-09-15: 시드·동기화 이중 등록 정리. 시드 행을 지우지 않고 대체한 동기화 id 를 남긴다.
 -- Worker 가 /models/<시드 id> 를 /models/<superseded_by> 로 301 리다이렉트한다.
 ALTER TABLE models ADD COLUMN superseded_by TEXT;
+
+-- 같은 모델을 여러 프로바이더가 서빙할 때의 비교용. OpenRouter 의
+-- /models/:slug/endpoints 를 주 1회 받아 채운다.
+--
+-- latency_ms·throughput_tps 는 OpenRouter 가 전 모델에 null 을 내려주고 있다.
+-- 컬럼은 두되 값이 생기면 그대로 흘러가게 하고, 화면에서는 값이 있을 때만 그린다.
+CREATE TABLE IF NOT EXISTS provider_endpoints (
+  model_id          TEXT NOT NULL,      -- 카탈로그 models.id
+  model_slug        TEXT NOT NULL,      -- OpenRouter 슬러그
+  model_name        TEXT NOT NULL,
+  provider_name     TEXT NOT NULL,
+  tag               TEXT NOT NULL,      -- deepinfra/turbo 등. 한 프로바이더가 여러 구성을 올린다
+  quantization      TEXT,
+  context_length    INTEGER,
+  max_output_tokens INTEGER,
+  input_per_1m      REAL,
+  output_per_1m     REAL,
+  uptime_30m        REAL,
+  uptime_1d         REAL,
+  latency_ms        REAL,
+  throughput_tps    REAL,
+  status            TEXT,
+  updated_at        TEXT NOT NULL,
+  PRIMARY KEY (model_slug, tag)
+);
+CREATE INDEX IF NOT EXISTS idx_provider_endpoints_model ON provider_endpoints(model_id);

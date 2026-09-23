@@ -73,6 +73,24 @@ jobs:
             echo "⚠️ 벤치마크 갱신 건너뜀 (기존 값 유지)"
           fi
 
+      # 같은 모델을 여러 곳이 서빙할 때의 단가·양자화·가동률. 예전 '추론 속도' 화면은
+      # 손으로 적은 프로바이더 6줄을 41일째 "실시간"이라고 부르고 있었다.
+      # 스크립트가 하한(모델 20개) 미달 시 빈 파일을 남기므로, 수집 실패가 표를 비우지 않는다.
+      - name: ⚖️ 4.7. 프로바이더 엔드포인트 동기화 (OpenRouter)
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          if python3 backend/scripts/sync_provider_endpoints.py && [ -s provider_endpoints.sql ]; then
+            npx wrangler d1 execute llm-compass-db --remote --file=provider_endpoints.sql
+            npx wrangler d1 execute llm-compass-db --remote --command "
+              SELECT COUNT(DISTINCT model_slug) AS models, COUNT(*) AS endpoints,
+                     MAX(updated_at) AS updated FROM provider_endpoints;
+            "
+          else
+            echo "⚠️ 프로바이더 엔드포인트 갱신 건너뜀 (기존 값 유지)"
+          fi
+
       # 이전 회차의 스냅샷(= 그때의 갱신 후 상태)과 지금을 비교한다.
       # 스냅샷을 갱신 '전' 에 찍던 이전 방식은 이번 회차 변경분이 다음 회차에나
       # 담겨 리포트가 항상 한 주기 늦었다 (2026-09-06 실측: +18 이 어느 스냅샷에도

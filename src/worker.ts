@@ -499,6 +499,51 @@ export default Sentry.withSentry(
       });
     }
 
+    // 같은 모델을 여러 곳이 서빙할 때의 비교표. 주 1회 동기화가 채운다.
+    // 예전 '실시간 추론 속도' 화면은 손으로 적은 6줄을 41일째 보여주고 있었다.
+    if (url.pathname === '/api/v1/provider-endpoints') {
+      try {
+        const { results } = await env.DB.prepare(
+          `SELECT * FROM provider_endpoints ORDER BY model_name ASC, output_per_1m ASC`
+        ).all();
+
+        // 화면은 모델을 골라 그 안의 프로바이더를 비교한다. 모델 단위로 묶어 보낸다.
+        const byModel = new Map<string, any>();
+        for (const r of results as any[]) {
+          if (!byModel.has(r.model_slug)) {
+            byModel.set(r.model_slug, {
+              model_id: r.model_id, model_slug: r.model_slug, model_name: r.model_name,
+              updated_at: r.updated_at, providers: [],
+            });
+          }
+          byModel.get(r.model_slug).providers.push({
+            provider_name: r.provider_name, tag: r.tag, quantization: r.quantization,
+            context_length: r.context_length, max_output_tokens: r.max_output_tokens,
+            input_per_1m: r.input_per_1m, output_per_1m: r.output_per_1m,
+            uptime_30m: r.uptime_30m, uptime_1d: r.uptime_1d,
+            // OpenRouter 가 전 모델에 null 을 준다. 값이 생기면 그대로 흘러간다.
+            latency_ms: r.latency_ms, throughput_tps: r.throughput_tps,
+          });
+        }
+        // 비교할 곳이 많은 모델부터.
+        const models = [...byModel.values()].sort((a, b) => b.providers.length - a.providers.length);
+
+        return new Response(JSON.stringify({
+          models,
+          updated_at: models[0]?.updated_at || null,
+          source: 'OpenRouter /api/v1/models/:slug/endpoints',
+        }), {
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+            'Cache-Control': 'public, max-age=300, s-maxage=3600',
+          },
+        });
+      } catch (err: any) {
+        return fail(err);
+      }
+    }
+
     if (url.pathname === '/api/v1/recommend/trending') {
       return new Response(JSON.stringify(TRENDING_TEMPLATES), {
         // 배포해야만 바뀌는 상수다. 엣지가 처리하게 두고, 대신 배포 후 최대 1시간은

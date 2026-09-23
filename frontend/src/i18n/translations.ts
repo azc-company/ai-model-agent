@@ -210,20 +210,27 @@ export interface TranslationDictionary {
     addCompare: string;
   };
   speed: {
+    badge: string;
     subtitle: string;
     description: string;
     targetModel: string;
-    modelLlamaTag: string;
-    modelDeepseekTag: string;
-    tabTps: string;
-    tabTtft: string;
-    chartByProvider: string;
-    metricTps: string;
-    metricTtft: string;
-    refreshed: string;
-    legendTps: string;
-    legendTtft: string;
+    asOf: string;
+    source: string;
+    providerCount: string;
+    metricOutput: string;
+    metricInput: string;
+    metricUptime: string;
+    unitPer1M: string;
+    chartTitle: string;
     rankTitle: string;
+    colQuant: string;
+    colCtx: string;
+    colUptime: string;
+    cheapest: string;
+    speedNote: string;
+    loading: string;
+    empty: string;
+    unknown: string;
   };
   compare: {
     emptyTitle: string;
@@ -485,20 +492,27 @@ export const translations: Record<Language, TranslationDictionary> = {
       addCompare: "+ 비교"
     },
     speed: {
-      subtitle: "프로바이더별 실시간 추론 지연시간(TTFT) & 속도(TPS) 벤치마크",
-      description: "동일한 오픈/상용 AI 모델이라도 서빙 아키텍처(Groq LPU vs Cerebras WSE vs H100 Cluster)에 따라 최대 15배 속도 차이가 발생합니다. 최적의 인프라를 실시간 비교하세요.",
-      targetModel: "대상 모델:",
-      modelLlamaTag: "오픈 대표",
-      modelDeepseekTag: "추론 특화",
-      tabTps: "🚀 초당 출력 속도 (TPS - 높을수록 우수)",
-      tabTtft: "⏱️ 첫 토큰 지연시간 (TTFT ms - 낮을수록 우수)",
-      chartByProvider: "📊 프로바이더별",
-      metricTps: "초당 생성 토큰 수 (Tokens/sec)",
-      metricTtft: "첫 응답 지연시간 (TTFT ms)",
-      refreshed: "실시간 데이터 갱신 완료",
-      legendTps: "출력 속도",
-      legendTtft: "첫 토큰 지연시간",
-      rankTitle: "🏆 최적 인프라 서빙 랭킹 (Infrastructure Rank)"
+      badge: "프로바이더 서빙 비교",
+      subtitle: "같은 모델, 어디서 돌리느냐에 따라 달라지는 것",
+      description: "같은 가중치라도 프로바이더마다 양자화 방식·단가·가동률이 다릅니다. OpenRouter 가 실제로 연결해 둔 엔드포인트를 주 1회 받아 비교합니다.",
+      targetModel: "대상 모델",
+      asOf: "기준",
+      source: "출처",
+      providerCount: "개 프로바이더",
+      metricOutput: "출력 단가",
+      metricInput: "입력 단가",
+      metricUptime: "가동률 (최근 30분)",
+      unitPer1M: "$/100만 토큰",
+      chartTitle: "프로바이더별",
+      rankTitle: "프로바이더 상세",
+      colQuant: "양자화",
+      colCtx: "컨텍스트",
+      colUptime: "가동률",
+      cheapest: "최저가",
+      speedNote: "첫 토큰 지연(TTFT)과 초당 토큰(TPS)은 OpenRouter 가 공개 API 로 내주지 않아 싣지 않았습니다. 값이 공개되면 이 화면에 그대로 붙습니다.",
+      loading: "불러오는 중",
+      empty: "표시할 데이터가 없습니다",
+      unknown: "미공개",
     },
     compare: {
       emptyTitle: "비교할 모델이 선택되지 않았습니다.",
@@ -758,20 +772,27 @@ export const translations: Record<Language, TranslationDictionary> = {
       addCompare: "+ Compare"
     },
     speed: {
-      subtitle: "Real-time inference latency (TTFT) & throughput (TPS) benchmarks by provider",
-      description: "The same model can run up to 15× faster or slower depending on the serving architecture (Groq LPU vs Cerebras WSE vs H100 cluster). Compare infrastructure in real time.",
-      targetModel: "Target model:",
-      modelLlamaTag: "flagship open model",
-      modelDeepseekTag: "reasoning-focused",
-      tabTps: "🚀 Output speed (TPS — higher is better)",
-      tabTtft: "⏱️ Time to first token (TTFT ms — lower is better)",
-      chartByProvider: "📊 By provider —",
-      metricTps: "tokens generated per second",
-      metricTtft: "time to first token (TTFT ms)",
-      refreshed: "Live data refreshed",
-      legendTps: "Output speed",
-      legendTtft: "Time to first token",
-      rankTitle: "🏆 Infrastructure serving rank"
+      badge: "Provider serving comparison",
+      subtitle: "Same model, different places to run it",
+      description: "The same weights are served with different quantization, pricing and uptime depending on the provider. Endpoints that OpenRouter actually routes to are pulled weekly.",
+      targetModel: "Model",
+      asOf: "As of",
+      source: "Source",
+      providerCount: " providers",
+      metricOutput: "Output price",
+      metricInput: "Input price",
+      metricUptime: "Uptime (last 30m)",
+      unitPer1M: "$/1M tokens",
+      chartTitle: "By provider",
+      rankTitle: "Provider detail",
+      colQuant: "Quantization",
+      colCtx: "Context",
+      colUptime: "Uptime",
+      cheapest: "Cheapest",
+      speedNote: "Time to first token (TTFT) and tokens per second (TPS) are not exposed by OpenRouter's public API, so they are not shown. They will appear here if that changes.",
+      loading: "Loading",
+      empty: "No data to show",
+      unknown: "Not disclosed",
     },
     compare: {
       emptyTitle: "No models selected for comparison.",
@@ -1031,20 +1052,27 @@ export const translations: Record<Language, TranslationDictionary> = {
       addCompare: "+ 比較"
     },
     speed: {
-      subtitle: "プロバイダー別のリアルタイム推論レイテンシ(TTFT)とスループット(TPS)ベンチマーク",
-      description: "同じモデルでもサービング基盤(Groq LPU / Cerebras WSE / H100クラスタ)により最大15倍の速度差が生じます。最適なインフラをリアルタイムで比較してください。",
-      targetModel: "対象モデル:",
-      modelLlamaTag: "オープン代表",
-      modelDeepseekTag: "推論特化",
-      tabTps: "🚀 出力速度 (TPS - 高いほど良い)",
-      tabTtft: "⏱️ 初回トークン遅延 (TTFT ms - 低いほど良い)",
-      chartByProvider: "📊 プロバイダー別",
-      metricTps: "秒あたり生成トークン数 (Tokens/sec)",
-      metricTtft: "初回応答遅延 (TTFT ms)",
-      refreshed: "リアルタイムデータ更新完了",
-      legendTps: "出力速度",
-      legendTtft: "初回トークン遅延",
-      rankTitle: "🏆 最適インフラ サービングランキング"
+      badge: "プロバイダー提供比較",
+      subtitle: "同じモデルでも、どこで動かすかで変わるもの",
+      description: "同じ重みでもプロバイダーごとに量子化方式・料金・稼働率が異なります。OpenRouter が実際に接続しているエンドポイントを週1回取得して比較します。",
+      targetModel: "対象モデル",
+      asOf: "基準",
+      source: "出典",
+      providerCount: "件のプロバイダー",
+      metricOutput: "出力料金",
+      metricInput: "入力料金",
+      metricUptime: "稼働率 (直近30分)",
+      unitPer1M: "$/100万トークン",
+      chartTitle: "プロバイダー別",
+      rankTitle: "プロバイダー詳細",
+      colQuant: "量子化",
+      colCtx: "コンテキスト",
+      colUptime: "稼働率",
+      cheapest: "最安",
+      speedNote: "最初のトークンまでの遅延(TTFT)と毎秒トークン数(TPS)は OpenRouter の公開 API では提供されないため掲載していません。公開されればこの画面に反映されます。",
+      loading: "読み込み中",
+      empty: "表示するデータがありません",
+      unknown: "非公開",
     },
     compare: {
       emptyTitle: "比較するモデルが選択されていません。",
@@ -1304,20 +1332,27 @@ export const translations: Record<Language, TranslationDictionary> = {
       addCompare: "+ 比较"
     },
     speed: {
-      subtitle: "各供应商的实时推理延迟 (TTFT) 与吞吐 (TPS) 基准",
-      description: "即使是同一模型，服务架构(Groq LPU / Cerebras WSE / H100 集群)不同也会带来最高 15 倍的速度差异。请实时比较基础设施。",
-      targetModel: "目标模型:",
-      modelLlamaTag: "开源代表",
-      modelDeepseekTag: "推理专用",
-      tabTps: "🚀 输出速度 (TPS - 越高越好)",
-      tabTtft: "⏱️ 首个 token 延迟 (TTFT ms - 越低越好)",
-      chartByProvider: "📊 各供应商",
-      metricTps: "每秒生成 token 数",
-      metricTtft: "首次响应延迟 (TTFT ms)",
-      refreshed: "实时数据已刷新",
-      legendTps: "输出速度",
-      legendTtft: "首个 token 延迟",
-      rankTitle: "🏆 最佳基础设施服务排名"
+      badge: "供应商服务对比",
+      subtitle: "同一模型，在哪里运行会有差别",
+      description: "即使权重相同，不同供应商的量化方式、价格和可用率也不同。每周获取 OpenRouter 实际接入的端点进行对比。",
+      targetModel: "目标模型",
+      asOf: "基准",
+      source: "来源",
+      providerCount: "家供应商",
+      metricOutput: "输出价格",
+      metricInput: "输入价格",
+      metricUptime: "可用率（近30分钟）",
+      unitPer1M: "$/百万 token",
+      chartTitle: "按供应商",
+      rankTitle: "供应商详情",
+      colQuant: "量化",
+      colCtx: "上下文",
+      colUptime: "可用率",
+      cheapest: "最低价",
+      speedNote: "首个 token 延迟（TTFT）与每秒 token 数（TPS）未由 OpenRouter 公开 API 提供，故未展示。一旦公开将直接显示在此页。",
+      loading: "加载中",
+      empty: "暂无数据",
+      unknown: "未公开",
     },
     compare: {
       emptyTitle: "尚未选择要比较的模型。",
@@ -1567,20 +1602,27 @@ export const translations: Record<Language, TranslationDictionary> = {
       addCompare: "+ Comparar"
     },
     speed: {
-      subtitle: "Benchmarks de latencia (TTFT) y rendimiento (TPS) por proveedor",
-      description: "Un mismo modelo puede ser hasta 15× más rápido o lento según la arquitectura de servicio (Groq LPU, Cerebras WSE o clúster H100). Compara la infraestructura en tiempo real.",
-      targetModel: "Modelo objetivo:",
-      modelLlamaTag: "modelo abierto insignia",
-      modelDeepseekTag: "centrado en razonamiento",
-      tabTps: "🚀 Velocidad de salida (TPS: más alto es mejor)",
-      tabTtft: "⏱️ Tiempo al primer token (TTFT ms: más bajo es mejor)",
-      chartByProvider: "📊 Por proveedor:",
-      metricTps: "tokens generados por segundo",
-      metricTtft: "tiempo al primer token (TTFT ms)",
-      refreshed: "Datos en vivo actualizados",
-      legendTps: "Velocidad de salida",
-      legendTtft: "Tiempo al primer token",
-      rankTitle: "🏆 Ranking de infraestructura de servicio"
+      badge: "Comparación de proveedores",
+      subtitle: "El mismo modelo, según dónde se ejecute",
+      description: "Los mismos pesos se sirven con distinta cuantización, precio y disponibilidad según el proveedor. Los endpoints que OpenRouter enruta realmente se descargan cada semana.",
+      targetModel: "Modelo",
+      asOf: "Datos del",
+      source: "Fuente",
+      providerCount: " proveedores",
+      metricOutput: "Precio de salida",
+      metricInput: "Precio de entrada",
+      metricUptime: "Disponibilidad (últimos 30 min)",
+      unitPer1M: "$/1M de tokens",
+      chartTitle: "Por proveedor",
+      rankTitle: "Detalle por proveedor",
+      colQuant: "Cuantización",
+      colCtx: "Contexto",
+      colUptime: "Disponibilidad",
+      cheapest: "Más barato",
+      speedNote: "El tiempo hasta el primer token (TTFT) y los tokens por segundo (TPS) no los expone la API pública de OpenRouter, así que no se muestran. Aparecerán aquí si eso cambia.",
+      loading: "Cargando",
+      empty: "No hay datos que mostrar",
+      unknown: "No divulgado",
     },
     compare: {
       emptyTitle: "No hay modelos seleccionados para comparar.",
@@ -1830,20 +1872,27 @@ export const translations: Record<Language, TranslationDictionary> = {
       addCompare: "+ Vergleichen"
     },
     speed: {
-      subtitle: "Benchmarks für Latenz (TTFT) und Durchsatz (TPS) nach Anbieter",
-      description: "Dasselbe Modell kann je nach Serving-Architektur (Groq LPU, Cerebras WSE oder H100-Cluster) bis zu 15× schneller oder langsamer laufen. Vergleichen Sie die Infrastruktur in Echtzeit.",
-      targetModel: "Zielmodell:",
-      modelLlamaTag: "führendes offenes Modell",
-      modelDeepseekTag: "auf Reasoning spezialisiert",
-      tabTps: "🚀 Ausgabegeschwindigkeit (TPS – höher ist besser)",
-      tabTtft: "⏱️ Zeit bis zum ersten Token (TTFT ms – niedriger ist besser)",
-      chartByProvider: "📊 Nach Anbieter:",
-      metricTps: "generierte Tokens pro Sekunde",
-      metricTtft: "Zeit bis zum ersten Token (TTFT ms)",
-      refreshed: "Live-Daten aktualisiert",
-      legendTps: "Ausgabegeschwindigkeit",
-      legendTtft: "Zeit bis zum ersten Token",
-      rankTitle: "🏆 Rangliste der Serving-Infrastruktur"
+      badge: "Anbieter-Vergleich",
+      subtitle: "Dasselbe Modell – je nachdem, wo es läuft",
+      description: "Dieselben Gewichte werden je nach Anbieter mit anderer Quantisierung, anderem Preis und anderer Verfügbarkeit ausgeliefert. Die Endpunkte, die OpenRouter tatsächlich ansteuert, werden wöchentlich abgerufen.",
+      targetModel: "Modell",
+      asOf: "Stand",
+      source: "Quelle",
+      providerCount: " Anbieter",
+      metricOutput: "Ausgabepreis",
+      metricInput: "Eingabepreis",
+      metricUptime: "Verfügbarkeit (letzte 30 Min.)",
+      unitPer1M: "$/1 Mio. Tokens",
+      chartTitle: "Nach Anbieter",
+      rankTitle: "Anbieterdetails",
+      colQuant: "Quantisierung",
+      colCtx: "Kontext",
+      colUptime: "Verfügbarkeit",
+      cheapest: "Günstigster",
+      speedNote: "Zeit bis zum ersten Token (TTFT) und Tokens pro Sekunde (TPS) gibt die öffentliche API von OpenRouter nicht heraus und werden daher nicht angezeigt. Sobald sie verfügbar sind, erscheinen sie hier.",
+      loading: "Wird geladen",
+      empty: "Keine Daten vorhanden",
+      unknown: "Nicht angegeben",
     },
     compare: {
       emptyTitle: "Keine Modelle zum Vergleich ausgewählt.",
@@ -2093,20 +2142,27 @@ export const translations: Record<Language, TranslationDictionary> = {
       addCompare: "+ Comparer"
     },
     speed: {
-      subtitle: "Benchmarks de latence (TTFT) et de débit (TPS) par fournisseur",
-      description: "Un même modèle peut être jusqu’à 15× plus rapide ou plus lent selon l’architecture de service (Groq LPU, Cerebras WSE ou cluster H100). Comparez l’infrastructure en temps réel.",
-      targetModel: "Modèle cible :",
-      modelLlamaTag: "modèle ouvert phare",
-      modelDeepseekTag: "axé sur le raisonnement",
-      tabTps: "🚀 Vitesse de sortie (TPS — plus c’est haut, mieux c’est)",
-      tabTtft: "⏱️ Délai avant le premier token (TTFT ms — plus c’est bas, mieux c’est)",
-      chartByProvider: "📊 Par fournisseur :",
-      metricTps: "tokens générés par seconde",
-      metricTtft: "délai avant le premier token (TTFT ms)",
-      refreshed: "Données en direct actualisées",
-      legendTps: "Vitesse de sortie",
-      legendTtft: "Délai avant le premier token",
-      rankTitle: "🏆 Classement des infrastructures de service"
+      badge: "Comparaison des fournisseurs",
+      subtitle: "Le même modèle, selon l'endroit où il tourne",
+      description: "Les mêmes poids sont servis avec une quantification, un tarif et une disponibilité différents selon le fournisseur. Les points de terminaison réellement utilisés par OpenRouter sont récupérés chaque semaine.",
+      targetModel: "Modèle",
+      asOf: "Au",
+      source: "Source",
+      providerCount: " fournisseurs",
+      metricOutput: "Prix de sortie",
+      metricInput: "Prix d'entrée",
+      metricUptime: "Disponibilité (30 dern. min)",
+      unitPer1M: "$/1M de tokens",
+      chartTitle: "Par fournisseur",
+      rankTitle: "Détail par fournisseur",
+      colQuant: "Quantification",
+      colCtx: "Contexte",
+      colUptime: "Disponibilité",
+      cheapest: "Moins cher",
+      speedNote: "Le délai avant le premier token (TTFT) et les tokens par seconde (TPS) ne sont pas exposés par l'API publique d'OpenRouter ; ils ne sont donc pas affichés. Ils apparaîtront ici le cas échéant.",
+      loading: "Chargement",
+      empty: "Aucune donnée à afficher",
+      unknown: "Non communiqué",
     },
     compare: {
       emptyTitle: "Aucun modèle sélectionné pour la comparaison.",
