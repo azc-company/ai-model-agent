@@ -135,9 +135,18 @@ def load_config(environ: Mapping[str, str] | None = None) -> BatchConfig:
         litellm_url=source.get("LITELLM_URL", "https://ai-gateway.azclab.com/v1").rstrip("/"),
         litellm_key=key,
         model=source.get("LITELLM_MODEL", "gemini/gemini-3.7-flash"),
-        fallback_model=source.get(
-            "LITELLM_FALLBACK_MODEL", "groq/qwen/qwen3.6-27b"
-        ),
+        # 폴백은 1순위(Google)와 다른 곳이어야 같은 장애·한도에 함께 걸리지 않는다.
+        # 2026-09-29 실측 — 실제 기사 프롬프트(입력 7~10K 토큰, 원문 12,000자×5)로:
+        #   groq/qwen/qwen3.6-27b        모델이 사라짐 (8/26 등록 후 조용히 죽어 있었다)
+        #   groq qwen3.8-27b·gpt-oss-120b 무료 등급 분당 8K 토큰 한도 — 큰 클러스터 거부
+        #   cf-gpt-oss-120b (무료)       대기열로 30~125초, 절반가량 타임아웃·524
+        #   nemotron-3.5-lightning:free  60초 타임아웃
+        #   paid-1 Mistral Small 3       반복에 빠져("…의 중요성" 되풀이) 12K 토큰까지 쓰다 524
+        #   openai/gpt-4o-mini           6/6 통과, 평균 19초, 본문 1,000~1,900자
+        #                                ($0.15/$0.60 per 1M — 1건 약 ₩5)
+        # 긴 기사를 안정적으로 받아 주는 무료 폴백은 없었다. 1순위(Gemini)가 실패한
+        # 날에만 쓰이므로 유료여도 비용은 무시할 수준이다. 본문은 Gemini 의 절반 이하다.
+        fallback_model=source.get("LITELLM_FALLBACK_MODEL", "openai/gpt-4o-mini"),
     )
 
 _IMG_PATTERNS = (
@@ -381,7 +390,7 @@ def _is_qwen_model(model):
     return "qwen" in model.lower()
 
 
-def _request_llm(prompt, config, model, max_tokens=12000):
+def _request_llm(prompt, config, model, max_tokens=12000, timeout=60):
     request_body = {
         "model": model,
         "messages": [
@@ -393,6 +402,9 @@ def _request_llm(prompt, config, model, max_tokens=12000):
         # 포함)·our_take·open_questions·팁까지 더하면 6000 으로는 지시를 따를 수 없다.
         "max_tokens": max_tokens,
     }
+    if "gpt-oss" in model:
+        # 추론형이라 기본 강도에서는 같은 기사가 124초 걸렸다. low 로 42초.
+        request_body["reasoning_effort"] = "low"
     if _is_qwen_model(model):
         request_body.update({
             "reasoning_effort": "none",
@@ -411,7 +423,7 @@ def _request_llm(prompt, config, model, max_tokens=12000):
     payload = json.dumps(request_body).encode()
     req = urllib.request.Request(f"{config.litellm_url}/chat/completions", data=payload,
         headers={"Authorization": f"Bearer {config.litellm_key}", "Content-Type": "application/json", "User-Agent": "curl/8.7.1"}, method="POST")
-    with urllib.request.urlopen(req, timeout=60) as resp:
+    with urllib.request.urlopen(req, timeout=timeout) as resp:
         data = json.loads(resp.read())
         choice = data["choices"][0]
         if choice.get("finish_reason") == "content_filter":
@@ -461,16 +473,27 @@ def _has_required_report_fields(report):
     return all(report.get(field) not in (None, "", []) for field in REQUIRED_REPORT_FIELDS)
 
 
+# 폴백 쪽이 느린 날이 있다(후보 실측 17~125초). 1순위와 같은 60초로 끊으면
+# 원문이 많은 날 폴백까지 같이 죽는다. 게이트웨이 앞단이 약 125초에서 끊으므로 그 안.
+FALLBACK_TIMEOUT = 120
+
+
 def call_llm(prompt, config):
+    # 어느 모델이 썼는지 남긴다. 예전에는 로그에도 D1 에도 없어서, 폴백이 한 달 넘게
+    # 죽어 있어도 알 방법이 없었다. 저장 컬럼이 아니라 배치 요약에만 쓰인다.
     try:
-        return _request_llm(prompt, config, config.model)
+        report = _request_llm(prompt, config, config.model)
+        report["_model"] = config.model
+        return report
     except Exception as error:
         if not config.fallback_model or not _is_transient_llm_error(error):
             raise
+        print(f"  [폴백] {config.model} 실패({type(error).__name__}) → {config.fallback_model}")
 
-    report = _request_llm(prompt, config, config.fallback_model)
+    report = _request_llm(prompt, config, config.fallback_model, timeout=FALLBACK_TIMEOUT)
     if not _has_required_report_fields(report):
-        report = _request_llm(prompt, config, config.fallback_model)
+        report = _request_llm(prompt, config, config.fallback_model, timeout=FALLBACK_TIMEOUT)
+    report["_model"] = config.fallback_model
     return report
 
 def _is_filtered(article, config):
@@ -791,6 +814,7 @@ def run_batch(
                 cluster = kept
                 report = generator(build_prompt(cluster), config)
             summary.generated += 1
+            summary.reasons[f"생성 모델 {report.get('_model', '?')}"] += 1
         except Exception as error:
             # 원인을 삼키면 실패가 늘어도 왜인지 알 수 없다.
             print(f"  [LLM 실패] {type(error).__name__}: {str(error)[:200]}")

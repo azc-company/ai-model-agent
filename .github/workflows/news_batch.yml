@@ -9,7 +9,7 @@ on:
 jobs:
   news-d1-batch:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 40
 
     steps:
       - name: 📦 1. 저장소 체크아웃

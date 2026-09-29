@@ -38,7 +38,7 @@ class ConfigTests(unittest.TestCase):
 
         self.assertEqual(config.litellm_key, "test-key")
         self.assertEqual(config.model, "gemini/gemini-3.7-flash")
-        self.assertEqual(config.fallback_model, "groq/qwen/qwen3.6-27b")
+        self.assertEqual(config.fallback_model, "openai/gpt-4o-mini")
         self.assertEqual(config.litellm_url, "https://ai-gateway.azclab.com/v1")
 
 
@@ -179,6 +179,39 @@ class LlmClientTests(unittest.TestCase):
             "groq/qwen/qwen3.6-27b",
         ])
         self.assertEqual(report["primary_topic"], "AI 에이전트")
+
+    def test_records_which_model_wrote_the_report(self):
+        # 폴백이 한 달 넘게 죽어 있어도 몰랐던 이유 — 어느 모델이 썼는지 어디에도 없었다.
+        calls = []
+
+        def fake_urlopen(request, timeout):
+            calls.append((json.loads(request.data), timeout))
+            if len(calls) == 1:
+                raise TimeoutError("primary timed out")
+            return self.response_for(valid_generated_report())
+
+        config = BatchConfig("https://gateway.test/v1", "test-key",
+                             "gemini/gemini-3.7-flash", "cf-gpt-oss-120b")
+        with patch("generate_trend_reports.urllib.request.urlopen", fake_urlopen):
+            report = call_llm("prompt", config)
+
+        self.assertEqual(report["_model"], "cf-gpt-oss-120b")
+        # 폴백은 Cloudflare 대기열 때문에 느리다. 1순위와 같은 60초로 끊으면 안 된다.
+        self.assertEqual(calls[0][1], 60)
+        self.assertGreater(calls[1][1], 60)
+        # gpt-oss 는 추론형이라 기본 강도에서 124초가 걸렸다.
+        self.assertEqual(calls[1][0]["reasoning_effort"], "low")
+        self.assertNotIn("reasoning_effort", calls[0][0])
+
+    def test_primary_success_is_recorded_too(self):
+        def fake_urlopen(request, timeout):
+            return self.response_for(valid_generated_report())
+
+        config = BatchConfig("https://gateway.test/v1", "test-key",
+                             "gemini/gemini-3.7-flash", "cf-gpt-oss-120b")
+        with patch("generate_trend_reports.urllib.request.urlopen", fake_urlopen):
+            report = call_llm("prompt", config)
+        self.assertEqual(report["_model"], "gemini/gemini-3.7-flash")
 
     def test_normalizes_qwen_alias_fields_before_validation(self):
         calls = []
@@ -488,7 +521,7 @@ class ClusteringTest(unittest.TestCase):
         from trend_report_validation import REQUIRED_REPORT_FIELDS
         calls = []
 
-        def fake(prompt, config, model):
+        def fake(prompt, config, model, **_):
             calls.append(model)
             if model == config.model:
                 raise json.JSONDecodeError("Expecting value", "", 0)
