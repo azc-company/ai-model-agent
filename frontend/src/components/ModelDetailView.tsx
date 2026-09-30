@@ -52,6 +52,9 @@ export const ModelDetailView: React.FC<Props> = ({
   const [news, setNews] = useState<RelatedNews[]>([]);
   const [serving, setServing] = useState<ServingProvider[]>([]);
   const [copied, setCopied] = useState(false);
+  // 목록의 설명은 언어별 번역이다. 번역기는 원문 끝의 "code..." 같은 잘림을 매끈한 문장으로
+  // 다듬어 버려서, 잘렸는지는 원문(상세 API 의 description)으로 판단한다.
+  const [sourceDesc, setSourceDesc] = useState<string | null>(null);
 
   useEffect(() => {
     window.scrollTo({ top: 0 });
@@ -63,6 +66,7 @@ export const ModelDetailView: React.FC<Props> = ({
         if (!alive) return;
         setNews(r.related_news || []);
         setServing(r.serving_providers || []);
+        setSourceDesc(r.description ?? null);
       })
       .catch(() => { /* 부가 정보라 실패해도 본문은 그대로 보여준다 */ });
     return () => { alive = false; };
@@ -134,7 +138,7 @@ export const ModelDetailView: React.FC<Props> = ({
           <p className="text-sm sm:text-base text-slate-700 dark:text-slate-200 leading-relaxed font-semibold">{model.description}</p>
           <p className="text-2xs text-muted font-bold">
             {d.summaryNote}
-            {isTruncated(model.description) && docsUrl && (
+            {isTruncated(sourceDesc ?? model.description) && docsUrl && (
               <> · <a href={docsUrl} target="_blank" rel="noopener noreferrer"
                 onClick={() => track('external_link_click', { label: model.name })}
                 className="underline hover:text-indigo-600 dark:hover:text-cyan-400">{d.fullDescription} ↗</a></>
