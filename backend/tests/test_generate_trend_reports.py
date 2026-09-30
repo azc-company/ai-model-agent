@@ -95,7 +95,7 @@ class LlmClientTests(unittest.TestCase):
 
         config = BatchConfig("https://gateway.test/v1", "test-key", "personal-main")
         with patch("generate_trend_reports.urllib.request.urlopen", fake_urlopen):
-            report = call_llm("prompt", config)
+            with redirect_stdout(io.StringIO()): report = call_llm("prompt", config)
 
         payload = captured["payload"]
         response_format = payload["response_format"]
@@ -140,7 +140,7 @@ class LlmClientTests(unittest.TestCase):
             "groq/qwen/qwen3.6-27b",
         )
         with patch("generate_trend_reports.urllib.request.urlopen", fake_urlopen):
-            report = call_llm("prompt", config)
+            with redirect_stdout(io.StringIO()): report = call_llm("prompt", config)
 
         self.assertEqual(
             [payload["model"] for payload in payloads],
@@ -171,7 +171,7 @@ class LlmClientTests(unittest.TestCase):
             "groq/qwen/qwen3.6-27b",
         )
         with patch("generate_trend_reports.urllib.request.urlopen", fake_urlopen):
-            report = call_llm("prompt", config)
+            with redirect_stdout(io.StringIO()): report = call_llm("prompt", config)
 
         self.assertEqual(calls, [
             "gemini/gemini-3.7-flash",
@@ -193,7 +193,7 @@ class LlmClientTests(unittest.TestCase):
         config = BatchConfig("https://gateway.test/v1", "test-key",
                              "gemini/gemini-3.7-flash", "cf-gpt-oss-120b")
         with patch("generate_trend_reports.urllib.request.urlopen", fake_urlopen):
-            report = call_llm("prompt", config)
+            with redirect_stdout(io.StringIO()): report = call_llm("prompt", config)
 
         self.assertEqual(report["_model"], "cf-gpt-oss-120b")
         # 폴백은 Cloudflare 대기열 때문에 느리다. 1순위와 같은 60초로 끊으면 안 된다.
@@ -210,7 +210,7 @@ class LlmClientTests(unittest.TestCase):
         config = BatchConfig("https://gateway.test/v1", "test-key",
                              "gemini/gemini-3.7-flash", "cf-gpt-oss-120b")
         with patch("generate_trend_reports.urllib.request.urlopen", fake_urlopen):
-            report = call_llm("prompt", config)
+            with redirect_stdout(io.StringIO()): report = call_llm("prompt", config)
         self.assertEqual(report["_model"], "gemini/gemini-3.7-flash")
 
     def test_normalizes_qwen_alias_fields_before_validation(self):
@@ -234,7 +234,7 @@ class LlmClientTests(unittest.TestCase):
             "groq/qwen/qwen3.6-27b",
         )
         with patch("generate_trend_reports.urllib.request.urlopen", fake_urlopen):
-            report = call_llm("prompt", config)
+            with redirect_stdout(io.StringIO()): report = call_llm("prompt", config)
 
         self.assertEqual(len(calls), 2)
         self.assertEqual(report["primary_topic"], "AI 에이전트")
@@ -335,16 +335,18 @@ class OrchestratorTests(unittest.TestCase):
                 raise value
             return value
 
-        summary = run_batch(
-            BatchConfig("https://gateway.test/v1", "test", "model"),
-            fetcher=lambda feed: articles_by_feed[feed],
-            generator=generator,
-            writer=lambda sql: written_sql.append(sql) is None,
-            feeds=("agent-feed", "research-feed"),
-            # 원문 스크래핑이 테스트에서 실제 네트워크를 타지 않게 한다
-            body_attacher=lambda arts: [dict(a, body="본문 " * 200) for a in arts],
-            catalog_loader=lambda: [("gpt-4o", "GPT-4o")],
-        )
+        # 일부러 낸 실패가 "[LLM 실패]" 로 CI 로그에 섞이면 실제 장애처럼 읽힌다.
+        with redirect_stdout(io.StringIO()):
+            summary = run_batch(
+                BatchConfig("https://gateway.test/v1", "test", "model"),
+                fetcher=lambda feed: articles_by_feed[feed],
+                generator=generator,
+                writer=lambda sql: written_sql.append(sql) is None,
+                feeds=("agent-feed", "research-feed"),
+                # 원문 스크래핑이 테스트에서 실제 네트워크를 타지 않게 한다
+                body_attacher=lambda arts: [dict(a, body="본문 " * 200) for a in arts],
+                catalog_loader=lambda: [("gpt-4o", "GPT-4o")],
+            )
 
         self.assertEqual(summary.saved, 1)
         self.assertEqual(summary.failed, 1)
@@ -530,7 +532,7 @@ class ClusteringTest(unittest.TestCase):
         config = gtr.BatchConfig(litellm_url="u", litellm_key="k",
                                  model="primary", fallback_model="backup")
         with patch.object(gtr, "_request_llm", fake):
-            gtr.call_llm("prompt", config)
+            with redirect_stdout(io.StringIO()): gtr.call_llm("prompt", config)
         self.assertEqual(calls, ["primary", "backup"])
 
     def test_content_filter_raises_a_named_error(self):
