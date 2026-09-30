@@ -346,6 +346,7 @@ class OrchestratorTests(unittest.TestCase):
                 # 원문 스크래핑이 테스트에서 실제 네트워크를 타지 않게 한다
                 body_attacher=lambda arts: [dict(a, body="본문 " * 200) for a in arts],
                 catalog_loader=lambda: [("gpt-4o", "GPT-4o")],
+                published_loader=lambda: set(),
             )
 
         self.assertEqual(summary.saved, 1)
@@ -371,6 +372,7 @@ class OrchestratorTests(unittest.TestCase):
             feeds=("one-feed",),
             body_attacher=lambda arts: [dict(a, body="본문 " * 200) for a in arts],
             catalog_loader=lambda: [("gpt-4o", "GPT-4o")],
+            published_loader=lambda: set(),
         )
 
         self.assertEqual(summary.saved, 0)
@@ -432,8 +434,82 @@ class OrchestratorTests(unittest.TestCase):
         self.assertIn("확인되지 않은 것", sql)
 
     def test_exit_code_is_nonzero_when_nothing_saved(self):
-        self.assertEqual(exit_code_for(BatchSummary(saved=0, failed=1)), 1)
-        self.assertEqual(exit_code_for(BatchSummary(saved=1, failed=3)), 0)
+        # 쓸 클러스터가 있었는데 하나도 못 저장했다 — 실패
+        self.assertEqual(exit_code_for(BatchSummary(collected=50, clusters=3, saved=0, failed=3)), 1)
+        self.assertEqual(exit_code_for(BatchSummary(collected=50, clusters=3, saved=1, failed=2)), 0)
+
+    def test_nothing_collected_is_a_failure(self):
+        # 피드가 전멸한 날. 조용한 날과 구분해야 한다.
+        self.assertEqual(exit_code_for(BatchSummary(collected=0)), 1)
+
+    def test_no_new_sources_is_not_a_failure(self):
+        # 모은 글이 전부 이미 기사로 쓴 원문이라 클러스터가 없다. 재탕을 막은 결과라 정상이다.
+        self.assertEqual(exit_code_for(BatchSummary(collected=180, clusters=0, saved=0)), 0)
+
+    def _one_source_batch(self, published_loader):
+        written = []
+        article = {"title": "GPT-4o agent benchmark", "link": "https://example.org/gpt?utm_source=rss",
+                   "summary": "AI model agent benchmark", "source": "example.org"}
+        summary = run_batch(
+            BatchConfig("https://gateway.test/v1", "test", "model"),
+            fetcher=lambda _feed: [article],
+            generator=lambda _p, _c: valid_generated_report(),
+            writer=lambda sql: written.append(sql) is None,
+            feeds=("one-feed",),
+            body_attacher=lambda arts: [dict(a, body="본문 " * 200) for a in arts],
+            catalog_loader=lambda: [("gpt-4o", "GPT-4o")],
+            published_loader=published_loader,
+        )
+        return summary, written
+
+    def test_already_published_source_is_not_rewritten(self):
+        # 같은 원문으로 25일간 기사 27건이 나왔던 문제. utm 파라미터·끝 슬래시가 달라도 같은 원문이다.
+        summary, written = self._one_source_batch(lambda: {"https://example.org/gpt"})
+        self.assertEqual(summary.reasons["already_published"], 1)
+        self.assertEqual(summary.clusters, 0)
+        self.assertEqual(written, [])
+
+    def test_stale_source_is_not_written_up_late(self):
+        # 월 1~2회 쓰는 블로그는 피드 상위 8개가 몇 달에 걸친다. 재탕을 막고 나면
+        # 그 묵은 글이 뒤늦게 "트렌드" 로 나간다.
+        from datetime import datetime, timedelta, timezone
+        import generate_trend_reports as gtr
+        today = datetime(2026, 9, 30, tzinfo=timezone.utc)
+        base = {"summary": "AI model agent benchmark", "source": "example.org"}
+        arts = [dict(base, title="GPT-4o agent benchmark fresh", link="https://example.org/a",
+                     published=today - timedelta(days=2)),
+                dict(base, title="GPT-4o agent benchmark old", link="https://example.org/b",
+                     published=today - timedelta(days=20)),
+                dict(base, title="GPT-4o agent benchmark undated", link="https://example.org/c",
+                     published=None)]
+        seen = []
+        gtr.run_batch(
+            BatchConfig("https://gateway.test/v1", "test", "model"),
+            fetcher=lambda _feed: arts,
+            generator=lambda _p, _c: valid_generated_report(),
+            writer=lambda _sql: True,
+            feeds=("one-feed",),
+            body_attacher=lambda a: seen.extend(x["link"] for x in a) or [dict(x, body="본문 " * 200) for x in a],
+            catalog_loader=lambda: [("gpt-4o", "GPT-4o")],
+            published_loader=lambda: set(),
+            now=lambda: today,
+        )
+        # 오래된 글은 본문을 긁기 전에 빠진다. 날짜 없는 글은 판단할 수 없어 남긴다.
+        self.assertEqual(sorted(seen), ["https://example.org/a", "https://example.org/c"])
+
+    def test_reads_rss_and_atom_dates(self):
+        import generate_trend_reports as gtr
+        rss = gtr._published_at("<item><pubDate>Mon, 29 Sep 2026 14:05:00 +0900</pubDate></item>")
+        atom = gtr._published_at("<entry><published>2026-09-29T05:05:00Z</published></entry>")
+        self.assertEqual(rss, atom)                      # 같은 순간, 다른 표기
+        self.assertIsNone(gtr._published_at("<item><title>x</title></item>"))
+        self.assertIsNone(gtr._published_at("<item><pubDate>어제</pubDate></item>"))
+
+    def test_unreadable_history_does_not_stop_the_batch(self):
+        with redirect_stdout(io.StringIO()):
+            summary, _ = self._one_source_batch(lambda: None)
+        self.assertEqual(summary.reasons["published_lookup_failed"], 1)
+        self.assertEqual(summary.clusters, 1)
 
 
 class CatalogAliasTest(unittest.TestCase):

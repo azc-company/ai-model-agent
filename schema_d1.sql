@@ -196,3 +196,13 @@ CREATE TABLE IF NOT EXISTS provider_endpoints (
   PRIMARY KEY (model_slug, tag)
 );
 CREATE INDEX IF NOT EXISTS idx_provider_endpoints_model ON provider_endpoints(model_id);
+
+-- 배치가 정상 종료한 마지막 시각. /health 의 정체 판정용.
+-- 재탕 기사를 막은 뒤로 새 원문이 없는 날은 기사가 0건이라, "최신 기사 시각" 만으로는
+-- 배치가 멈춘 것과 조용한 날을 구분할 수 없다.
+CREATE TABLE IF NOT EXISTS batch_runs (
+  name      TEXT PRIMARY KEY,   -- 'news'
+  ran_at    TEXT NOT NULL,
+  collected INTEGER,
+  saved     INTEGER
+);

@@ -287,12 +287,17 @@ export default Sentry.withSentry(
         const row: any = await env.DB.prepare(
           `SELECT (SELECT COUNT(*) FROM models) AS models,
                   (SELECT COUNT(*) FROM trend_news) AS news,
-                  (SELECT MAX(created_at) FROM trend_news) AS news_latest`
+                  (SELECT MAX(created_at) FROM trend_news) AS news_latest,
+                  (SELECT ran_at FROM batch_runs WHERE name = 'news') AS news_batch_ran`
         ).first();
 
-        const ageH = row?.news_latest
-          ? (Date.now() - Date.parse(String(row.news_latest).replace(' ', 'T') + 'Z')) / 3_600_000
+        // 정체 = 배치가 돌지 않음. 재탕 기사를 막은 뒤로 새 원문이 없는 날은 기사가 0건이라
+        // 최신 기사 시각만 보면 조용한 날을 정체로 오판한다. 배치의 정상 종료 기록과
+        // 최신 기사 중 늦은 쪽을 쓴다(기록이 생기기 전 과거 데이터도 그대로 판정된다).
+        const hoursSince = (v: unknown) => v
+          ? (Date.now() - Date.parse(String(v).replace(' ', 'T') + 'Z')) / 3_600_000
           : Infinity;
+        const ageH = Math.min(hoursSince(row?.news_latest), hoursSince(row?.news_batch_ran));
 
         // 카탈로그가 비면 D1 은 붙었어도 서비스는 제 기능을 못 한다.
         const ok = (row?.models ?? 0) > 100;
@@ -317,6 +322,7 @@ export default Sentry.withSentry(
             news: row?.news ?? 0,
             admin_password_set: adminConfigured,
             news_age_hours: Number.isFinite(ageH) ? Math.round(ageH * 10) / 10 : null,
+            news_batch_ran: row?.news_batch_ran ?? null,
             news_stale_after_hours: NEWS_STALE_HOURS,
           },
           checked_at: new Date().toISOString(),

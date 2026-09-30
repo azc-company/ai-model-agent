@@ -4,7 +4,9 @@
 RSS 수집 → 클러스터링 → LiteLLM(gpt-4o-mini) → Cloudflare D1 저장
 """
 import json, math, os, re, time, uuid, subprocess, urllib.error, urllib.request, urllib.parse
+import email.utils
 from collections import Counter
+from datetime import datetime, timedelta, timezone
 from dataclasses import dataclass, field
 from typing import Mapping
 
@@ -12,6 +14,7 @@ from trend_report_validation import (
     REQUIRED_REPORT_FIELDS,
     deduplicate_sources,
     is_duplicate_report,
+    normalize_url,
     validate_report,
 )
 
@@ -170,6 +173,28 @@ def extract_image(item_xml):
     return None
 
 
+# 배치는 하루 1회라 일주일이면 스케줄 지연·피드 갱신 지연을 넉넉히 덮는다.
+MAX_SOURCE_AGE_DAYS = 7
+
+_DATE_TAGS = ("pubDate", "published", "updated", "dc:date")
+
+
+def _published_at(item_xml):
+    """RSS <pubDate>(RFC 822) 또는 Atom <published>/<updated>(ISO 8601). 못 읽으면 None."""
+    for tag in _DATE_TAGS:
+        m = re.search(rf"<{tag}[^>]*>\s*([^<]+?)\s*</{tag}>", item_xml)
+        if not m:
+            continue
+        raw = m.group(1)
+        try:
+            when = (datetime.fromisoformat(raw.replace("Z", "+00:00")) if raw[:4].isdigit()
+                    else email.utils.parsedate_to_datetime(raw))
+            return (when if when.tzinfo else when.replace(tzinfo=timezone.utc)).astimezone(timezone.utc)
+        except (ValueError, TypeError):
+            continue
+    return None
+
+
 def fetch_rss(feed_url):
     try:
         req = urllib.request.Request(feed_url, headers={"User-Agent": "curl/8.7.1"})
@@ -188,7 +213,8 @@ def fetch_rss(feed_url):
                     or re.search(r"<content[^>]*>([\s\S]*?)</content>", t))
             if title and link:
                 clean = re.sub(r"<[^>]+>", "", desc.group(1) if desc else "").strip()[:500]
-                arts.append({"title": title.group(1).strip(), "link": link.group(1).strip(), "summary": clean, "source": urllib.parse.urlparse(feed_url).hostname, "image": extract_image(t)})
+                arts.append({"title": title.group(1).strip(), "link": link.group(1).strip(), "summary": clean, "source": urllib.parse.urlparse(feed_url).hostname, "image": extract_image(t),
+                             "published": _published_at(t)})
         return arts[:8]
     except Exception as e:
         print(f"  [RSS Skip] {feed_url}: {e}")
@@ -748,6 +774,30 @@ def build_insert_sql(report, cluster, report_id, catalog=()):
            f"'{esc(key_numbers)}', '{esc(our_take)}', '{esc(open_q)}', '{esc(mentioned)}')")
 
 
+def load_published_source_urls(runner=subprocess.run):
+    """이미 기사로 쓴 원문 URL(정규화)을 읽는다. 읽지 못하면 None.
+
+    RSS 피드는 글을 몇 주씩 목록에 남겨 둔다. 중복 검사가 매 회차 빈 상태로
+    시작해서, 같은 원문이 날마다 다시 묶여 새 기사가 됐다 — 2026-09-30 기준
+    373건 중 210건(56%)이 이미 쓴 원문만으로 만든 재탕이었고, Gemini 3.8 Flash
+    발표 글 하나로 34건이 나왔다.
+    """
+    try:
+        res = runner(
+            ["npx", "wrangler", "d1", "execute", "llm-compass-db", "--remote", "--json",
+             "--command",
+             "SELECT DISTINCT json_extract(j.value, '$.url') AS url "
+             "FROM trend_news, json_each(trend_news.original_sources) j"],
+            capture_output=True, text=True,
+        )
+        out = res.stdout
+        data = json.loads(out[out.index("["):])
+        return {normalize_url(r["url"]) for blk in data for r in blk.get("results", [])
+                if isinstance(r, dict) and r.get("url")}
+    except Exception:
+        return None
+
+
 def write_report(sql, runner=subprocess.run):
     result = runner(["npx","wrangler","d1","execute","llm-compass-db","--remote","--command", sql],
         capture_output=True, text=True)
@@ -770,6 +820,8 @@ def run_batch(
     feeds=RSS_FEEDS,
     body_attacher=attach_bodies,
     catalog_loader=load_catalog_names,
+    published_loader=load_published_source_urls,
+    now=lambda: datetime.now(timezone.utc),
 ):
     summary = BatchSummary()
     raw_articles = []
@@ -787,6 +839,31 @@ def run_batch(
     accepted_articles, source_reasons = deduplicate_sources(raw_articles)
     summary.reasons.update(source_reasons)
     summary.source_rejected = sum(source_reasons.values())
+
+    # 오래된 원문은 뺀다. 피드마다 최근 8개를 받는데, 한 달에 한두 번 쓰는 블로그는
+    # 그 8개가 몇 달에 걸친다. 재탕을 막고 나면 그동안 밀려 있던 묵은 글이 뒤늦게
+    # "트렌드 뉴스" 로 나간다 — 2026-09-30 실측, 새 원문 101건 중 45건이 8일 이상,
+    # 16건이 30일 이상 지난 글이었다. 날짜가 없는 글은 판단할 수 없어 남긴다.
+    before = len(accepted_articles)
+    cutoff = now() - timedelta(days=MAX_SOURCE_AGE_DAYS)
+    accepted_articles = [a for a in accepted_articles
+                         if not a.get("published") or a["published"] >= cutoff]
+    if before - len(accepted_articles):
+        summary.reasons["stale_source"] += before - len(accepted_articles)
+
+    # 이미 기사로 쓴 원문은 뺀다. 새 원문이 없는 날은 0건이 맞다.
+    published = published_loader()
+    if published is None:
+        # 목록을 못 읽었다고 배치를 멈추면 그날 기사가 없다. 재탕 위험을 감수하고 진행하되
+        # 요약에 남겨 드러나게 한다.
+        print("  ⚠️ 이미 쓴 원문 목록을 읽지 못함 — 이번 회차는 재탕 차단 없이 진행")
+        summary.reasons["published_lookup_failed"] += 1
+    else:
+        before = len(accepted_articles)
+        accepted_articles = [a for a in accepted_articles
+                             if normalize_url(str(a.get("link", ""))) not in published]
+        if before - len(accepted_articles):
+            summary.reasons["already_published"] += before - len(accepted_articles)
 
     # 원문 본문을 확보하고 실패한 기사는 버린다. 요약만으로 쓰면 환각이 된다.
     before_body = len(accepted_articles)
@@ -843,7 +920,17 @@ def run_batch(
 
 
 def exit_code_for(summary):
-    return 0 if summary.saved > 0 else 1
+    """실패로 볼 때만 1.
+
+    예전에는 저장 0건이면 무조건 실패였다. 재탕을 막은 뒤로는 새 원문이 없는 날
+    0건이 정상이다. 실패는 두 경우다 — 아무것도 못 모았거나(피드 전멸),
+    쓸 클러스터가 있었는데 하나도 저장하지 못했거나.
+    """
+    if summary.collected == 0:
+        return 1
+    if summary.clusters > 0 and summary.saved == 0:
+        return 1
+    return 0
 
 
 def _print_summary(summary):
@@ -870,7 +957,17 @@ def main():
     print("=" * 60)
     summary = run_batch(config)
     _print_summary(summary)
-    return exit_code_for(summary)
+    code = exit_code_for(summary)
+    if code == 0:
+        # 새 원문이 없어 0건인 날이 생기면서 "최신 기사 시각" 으로는 배치 정체를 가릴 수
+        # 없게 됐다. 정상 종료한 회차를 따로 남긴다.
+        write_report(
+            "INSERT INTO batch_runs (name, ran_at, collected, saved) "
+            f"VALUES ('news', datetime('now'), {int(summary.collected)}, {int(summary.saved)}) "
+            "ON CONFLICT(name) DO UPDATE SET ran_at = excluded.ran_at, "
+            "collected = excluded.collected, saved = excluded.saved;"
+        )
+    return code
 
 if __name__ == "__main__":
     raise SystemExit(main())
