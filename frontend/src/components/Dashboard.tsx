@@ -3,6 +3,7 @@ import type { ModelSpec, Provider } from '../types';
 import { useLanguage } from '../context/LanguageContext';
 import { fetchModels, fetchProviders } from '../api';
 import { CodeSnippetModal } from './CodeSnippetModal';
+import { ModelDetailView } from './ModelDetailView';
 import { Sparkles } from 'lucide-react';
 import { FilterSheet, type CatalogFilters } from './FilterSheet';
 import { track } from '../analytics';
@@ -36,6 +37,36 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
   // Filter states
   const [codeModalModel, setCodeModalModel] = useState<ModelSpec | null>(null);
+
+  // 모델 상세. 뉴스 기사 상세와 같은 방식으로 ?model= 에 싣는다 — 공유·북마크·뒤로가기.
+  const [detailId, setDetailId] = useState<string | null>(
+    () => new URLSearchParams(window.location.search).get('model'));
+  useEffect(() => {
+    const onPop = () => setDetailId(new URLSearchParams(window.location.search).get('model'));
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
+  const openDetail = (id: string) => {
+    const url = new URL(window.location.href);
+    url.searchParams.set('tab', 'dashboard');
+    url.searchParams.set('model', id);
+    window.history.pushState({}, '', url.toString());
+    setDetailId(id);
+  };
+  const closeDetail = () => {
+    const url = new URL(window.location.href);
+    url.searchParams.delete('model');
+    window.history.pushState({}, '', url.toString());
+    setDetailId(null);
+  };
+  // 다른 탭으로 옮길 때는 App 이 popstate 로 알린다(App.setActiveTab 참고).
+  const openArticle = (articleId: string) => {
+    const url = new URL(window.location.origin);
+    url.searchParams.set('tab', 'news');
+    url.searchParams.set('article', articleId);
+    window.history.pushState({}, '', url.toString());
+    window.dispatchEvent(new PopStateEvent('popstate'));
+  };
   const [searchTerm, setSearchTerm] = useState<string>(globalSearchQuery);
 
   useEffect(() => {
@@ -253,11 +284,31 @@ export const Dashboard: React.FC<DashboardProps> = ({
     }
   };
 
+  const detailModel = detailId ? models.find((m) => m.id === detailId) : undefined;
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-cyan-500"></div>
       </div>
+    );
+  }
+
+  if (detailModel) {
+    return (
+      <>
+        <ModelDetailView
+          model={detailModel}
+          allModels={models}
+          comparedIds={effectiveCompareIds}
+          onBack={closeDetail}
+          onOpenModel={openDetail}
+          onOpenArticle={openArticle}
+          onShowCode={setCodeModalModel}
+          onToggleCompare={handleToggle}
+        />
+        <CodeSnippetModal model={codeModalModel} onClose={() => setCodeModalModel(null)} />
+      </>
     );
   }
 
@@ -274,7 +325,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <span className="text-xs font-mono font-black text-purple-700 dark:text-amber-400">{highlights.fresh.length} new</span>
           </div>
           <h3 className="text-lg font-black text-slate-900 dark:text-white mb-1 group-hover:text-indigo-600 dark:group-hover:text-cyan-300 transition-colors">
-            {highlights.fresh[0]?.name ?? '—'}
+            {highlights.fresh[0] ? (
+              <button onClick={() => openDetail(highlights.fresh[0]!.id)} className="focus-ring text-left hover:underline underline-offset-4">{highlights.fresh[0]!.name}</button>
+            ) : '—'}
           </h3>
           <p className="text-xs text-muted leading-relaxed font-semibold">
             {t.dashboard.kpiNewDesc}
@@ -290,7 +343,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <span className="text-xs font-mono font-black text-accent">{highlights.longest ? `${(highlights.longest.context_window / 1_000_000).toLocaleString(undefined, { maximumFractionDigits: 2 })}M tokens` : '—'}</span>
           </div>
           <h3 className="text-lg font-black text-slate-900 dark:text-white mb-1 group-hover:text-cyan-600 transition-colors">
-            {highlights.longest?.name ?? '—'}
+            {highlights.longest ? (
+              <button onClick={() => openDetail(highlights.longest!.id)} className="focus-ring text-left hover:underline underline-offset-4">{highlights.longest!.name}</button>
+            ) : '—'}
           </h3>
           <p className="text-xs text-muted leading-relaxed font-semibold">
             {t.dashboard.kpiContextDesc}
@@ -306,7 +361,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <span className="text-xs font-mono font-black text-emerald-700 dark:text-emerald-300">{highlights.value ? `$${highlights.price.toFixed(3)} / 1M` : '—'}</span>
           </div>
           <h3 className="text-lg font-black text-slate-900 dark:text-white mb-1 group-hover:text-emerald-600 transition-colors">
-            {highlights.value?.name ?? '—'}
+            {highlights.value ? (
+              <button onClick={() => openDetail(highlights.value!.id)} className="focus-ring text-left hover:underline underline-offset-4">{highlights.value!.name}</button>
+            ) : '—'}
           </h3>
           <p className="text-xs text-muted leading-relaxed font-semibold">
             {t.dashboard.kpiValueDesc}
@@ -591,10 +648,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
                   {/* Model Title */}
                   <h3 className="text-xl font-black metallic-text group-hover:text-cyan-300 transition-colors mb-2 tracking-tight">
-                    {model.name}
+                    <button onClick={() => openDetail(model.id)} className="focus-ring text-left hover:underline underline-offset-4">
+                      {model.name}
+                    </button>
                   </h3>
 
-                  <p className="text-xs text-slate-700 dark:text-slate-200 line-clamp-2 mb-4 leading-relaxed font-bold">
+                  {/* 두 줄에서 잘린다. 전문과 세부 수치는 상세 화면에서 본다. 키보드 사용자는 위 제목 버튼으로 연다. */}
+                  <p onClick={() => openDetail(model.id)}
+                     className="text-xs text-slate-700 dark:text-slate-200 line-clamp-2 mb-4 leading-relaxed font-bold cursor-pointer">
                     {model.description}
                   </p>
 
@@ -743,7 +804,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     <tr key={model.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
                       <td className="py-3 px-4 font-extrabold text-slate-900 dark:text-white">
                         <div className="flex items-center gap-2">
-                          <span>{model.name}</span>
+                          <button onClick={() => openDetail(model.id)} className="focus-ring text-left hover:underline underline-offset-4">{model.name}</button>
                           {checkIsNew(model) && (
                             <span className="text-2xs px-1.5 py-0.5 rounded-full bg-gradient-to-r from-rose-500 to-pink-500 text-white font-black shrink-0 animate-pulse">
                               ✨ NEW
@@ -828,9 +889,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   <span className="text-xs font-black uppercase tracking-wider text-blue-700 dark:text-cyan-400 bg-blue-50 dark:bg-cyan-950/60 border border-blue-200 dark:border-cyan-800 px-2.5 py-1 rounded-md shrink-0">
                     {model.provider_name}
                   </span>
-                  <span className="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white truncate group-hover:text-blue-600 dark:group-hover:text-cyan-400 transition-colors">
+                  <button onClick={() => openDetail(model.id)} className="focus-ring text-left font-extrabold text-sm sm:text-base text-slate-900 dark:text-white truncate group-hover:text-blue-600 dark:group-hover:text-cyan-400 hover:underline underline-offset-4 transition-colors">
                     {model.name}
-                  </span>
+                  </button>
                   {checkIsNew(model) && (
                     <span className="text-2xs px-2 py-0.5 rounded-full bg-gradient-to-r from-rose-500 to-pink-500 text-white font-black shadow-sm shrink-0 animate-pulse">
                       ✨ NEW

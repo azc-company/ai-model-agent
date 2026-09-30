@@ -604,7 +604,7 @@ export default Sentry.withSentry(
 
     // ─── 익명 사용 로그 수집 ────────────────────────────────────────────────
     if (url.pathname === '/api/v1/analytics/track' && request.method === 'POST') {
-      const EVENT_TYPES = new Set(['page_view', 'search', 'compare_add', 'compare_remove', 'external_link_click', 'news_open']);
+      const EVENT_TYPES = new Set(['page_view', 'search', 'compare_add', 'compare_remove', 'external_link_click', 'news_open', 'model_open']);
       // 인증이 없는 엔드포인트라 클라이언트가 보내는 session_id 로는 제한이 무의미하다
       // (그냥 새로 만들면 된다). 실제 비용을 유발하는 주체인 IP 로 제한한다.
       // 크롤러는 기록하지 않는다. 구글봇은 페이지를 렌더링하며 자바스크립트를 실행해 이 엔드포인트를
@@ -789,6 +789,23 @@ export default Sentry.withSentry(
           benchmarks: typeof m.benchmarks === 'string' ? JSON.parse(m.benchmarks || '{}') : m.benchmarks,
           hardware_requirements: typeof m.hardware_requirements === 'string' ? JSON.parse(m.hardware_requirements || '{}') : m.hardware_requirements,
         };
+
+        // 상세 화면용. 설명 문단은 OpenRouter 가 200자 안팎으로 잘라서 주므로(88% 가
+        // "..." 로 끝난다) 세부 내용은 이미 가진 다른 데이터로 채운다.
+        // 기존 필드는 그대로 두고 덧붙이기만 한다 — 공개 API 라 형태를 깨지 않는다.
+        const [news, serving] = await Promise.all([
+          env.DB.prepare(
+            `SELECT id, title, report_type, created_at FROM trend_news
+             WHERE EXISTS (SELECT 1 FROM json_each(trend_news.mentioned_models) WHERE value = ?)
+             ORDER BY created_at DESC LIMIT 6`
+          ).bind(modelId).all(),
+          env.DB.prepare(
+            `SELECT provider_name, tag, quantization, input_per_1m, output_per_1m, uptime_30m, updated_at
+             FROM provider_endpoints WHERE model_id = ? ORDER BY output_per_1m ASC`
+          ).bind(modelId).all(),
+        ]);
+        (model as any).related_news = news.results;
+        (model as any).serving_providers = serving.results;
 
         return new Response(JSON.stringify(model), {
           headers: {

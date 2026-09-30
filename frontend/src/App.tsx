@@ -79,7 +79,13 @@ export const AppContent: React.FC = () => {
     if (tab !== 'news') {
       url.searchParams.delete('article');
     }
+    // ?model= (모델 상세)도 같다. 메뉴를 누르는 건 "목록으로" 라는 뜻이라, 같은 카탈로그
+    // 탭을 다시 눌러도 상세를 닫는다.
+    url.searchParams.delete('model');
     window.history.pushState({}, '', url.toString());
+    // pushState 는 이벤트를 내지 않는다. 이미 떠 있는 화면(카탈로그 상세 등)이 URL 을
+    // 다시 읽도록 알린다 — 각 화면의 popstate 핸들러가 그대로 처리한다.
+    window.dispatchEvent(new PopStateEvent('popstate'));
   };
 
   // 탭 뷰가 실제로 바뀔 때마다 방문을 기록한다 — 초기 진입/네비게이션/뒤로가기를 한 곳에서 커버

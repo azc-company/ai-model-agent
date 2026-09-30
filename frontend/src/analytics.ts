@@ -1,6 +1,6 @@
 // 익명 사용 로그. 개인 식별 정보는 보내지 않는다 — 세션 단위 UUID만 로컬에 저장.
 import { API_BASE_URL } from './api';
-export type AnalyticsEvent = 'page_view' | 'search' | 'compare_add' | 'compare_remove' | 'external_link_click' | 'news_open';
+export type AnalyticsEvent = 'page_view' | 'search' | 'compare_add' | 'compare_remove' | 'external_link_click' | 'news_open' | 'model_open';
 
 let cachedSessionId: string | null = null;
 

@@ -47,6 +47,39 @@ export interface TranslationDictionary {
     step4: string;
     step5: string;
   };
+  modelDetail: {
+    back: string;
+    copyLink: string;
+    copied: string;
+    firstSeen: string;
+    lastVerified: string;
+    staleNote: string;
+    summaryNote: string;
+    fullDescription: string;
+    keyFacts: string;
+    input: string;
+    output: string;
+    per1m: string;
+    context: string;
+    maxOutput: string;
+    modality: string;
+    license: string;
+    reasoning: string;
+    apiModelId: string;
+    benchmarks: string;
+    rank: string;
+    benchSource: string;
+    servingProviders: string;
+    servingNote: string;
+    quant: string;
+    uptime: string;
+    relatedNews: string;
+    noNews: string;
+    alternatives: string;
+    alternativesNote: string;
+    notFound: string;
+    tokens: string;
+  };
   dashboard: {
     title: string;
     subtitle: string;
@@ -329,6 +362,39 @@ export const translations: Record<Language, TranslationDictionary> = {
       step4: "Vercel, Railway, Cloud GPU 월간 OpEx 호스팅 인프라 비용 산출",
       step5: "Gemini 2.5 Flash 기반 7대 섹션 아키텍처 및 Mermaid 다이어그램 명세서 작성"
     },
+    modelDetail: {
+      back: "카탈로그로",
+      copyLink: "링크 복사",
+      copied: "복사됨",
+      firstSeen: "최초 발견",
+      lastVerified: "마지막 확인",
+      staleNote: "주간 자동 동기화 대상이 아닌 모델입니다. 아래 값은 마지막 확인 시점 기준입니다.",
+      summaryNote: "OpenRouter 제공 요약",
+      fullDescription: "전체 설명은 공식 문서에서",
+      keyFacts: "핵심 사양",
+      input: "입력",
+      output: "출력",
+      per1m: "100만 토큰당",
+      context: "컨텍스트",
+      maxOutput: "최대 출력",
+      modality: "입출력 형식",
+      license: "라이선스",
+      reasoning: "추론 지원",
+      apiModelId: "API 모델 ID",
+      benchmarks: "벤치마크",
+      rank: "카탈로그 {r}위 / {n}개",
+      benchSource: "LMArena (CC-BY 4.0) · GPQA Diamond: Epoch AI (CC-BY 4.0)",
+      servingProviders: "서빙 프로바이더",
+      servingNote: "같은 모델을 서빙하는 곳입니다. 곳마다 양자화와 단가가 다릅니다.",
+      quant: "양자화",
+      uptime: "가동률",
+      relatedNews: "이 모델이 언급된 기사",
+      noNews: "아직 이 모델을 다룬 기사가 없습니다.",
+      alternatives: "비슷한 가격대의 대안",
+      alternativesNote: "같은 등급에서 출력 단가가 가까운 순입니다.",
+      notFound: "모델을 찾을 수 없습니다.",
+      tokens: "토큰",
+    },
     dashboard: {
       title: "글로벌 LLM 모델 카탈로그",
       subtitle: "OpenAI, Anthropic, Google, AWS Bedrock, DeepSeek, Meta 등 580+ AI 전체 모델 공식 출처(Official Docs) 기반 스펙, 비용, 할당량 및 벤치마크 비교",
@@ -608,6 +674,39 @@ export const translations: Record<Language, TranslationDictionary> = {
       step3: "Simulating Traffic for 3 Model Combos (Best, Smart, Budget)",
       step4: "Calculating Monthly OpEx Infrastructure Costs (Vercel, Railway, Cloud GPU)",
       step5: "Synthesizing 7-Section Architecture & Mermaid Spec with Gemini 2.5 Flash"
+    },
+    modelDetail: {
+      back: "Back to catalog",
+      copyLink: "Copy link",
+      copied: "Copied",
+      firstSeen: "First seen",
+      lastVerified: "Last verified",
+      staleNote: "This model is not in the weekly automatic sync. Values below are as of the last check.",
+      summaryNote: "Summary provided by OpenRouter",
+      fullDescription: "Full description in the official docs",
+      keyFacts: "Key specs",
+      input: "Input",
+      output: "Output",
+      per1m: "per 1M tokens",
+      context: "Context",
+      maxOutput: "Max output",
+      modality: "Modalities",
+      license: "License",
+      reasoning: "Reasoning",
+      apiModelId: "API model ID",
+      benchmarks: "Benchmarks",
+      rank: "#{r} of {n} in catalog",
+      benchSource: "LMArena (CC-BY 4.0) · GPQA Diamond: Epoch AI (CC-BY 4.0)",
+      servingProviders: "Serving providers",
+      servingNote: "Providers serving this same model. Quantization and price differ by provider.",
+      quant: "Quantization",
+      uptime: "Uptime",
+      relatedNews: "Articles mentioning this model",
+      noNews: "No articles cover this model yet.",
+      alternatives: "Alternatives at a similar price",
+      alternativesNote: "Same tier, closest output price first.",
+      notFound: "Model not found.",
+      tokens: "tokens",
     },
     dashboard: {
       title: "Global LLM Model Catalog",
@@ -889,6 +988,39 @@ export const translations: Record<Language, TranslationDictionary> = {
       step4: "Vercel, Railway, Cloud GPU 月額OpExインフラ費用算出",
       step5: "Gemini 2.5 Flashによる7セクションアーキテクチャ＆Mermaid仕様書生成"
     },
+    modelDetail: {
+      back: "カタログへ",
+      copyLink: "リンクをコピー",
+      copied: "コピーしました",
+      firstSeen: "初回確認",
+      lastVerified: "最終確認",
+      staleNote: "週次自動同期の対象外のモデルです。以下は最終確認時点の値です。",
+      summaryNote: "OpenRouter 提供の要約",
+      fullDescription: "詳しい説明は公式ドキュメントへ",
+      keyFacts: "主要スペック",
+      input: "入力",
+      output: "出力",
+      per1m: "100万トークンあたり",
+      context: "コンテキスト",
+      maxOutput: "最大出力",
+      modality: "入出力形式",
+      license: "ライセンス",
+      reasoning: "推論対応",
+      apiModelId: "API モデル ID",
+      benchmarks: "ベンチマーク",
+      rank: "カタログ内 {r}位 / {n}件",
+      benchSource: "LMArena (CC-BY 4.0) · GPQA Diamond: Epoch AI (CC-BY 4.0)",
+      servingProviders: "提供プロバイダー",
+      servingNote: "同じモデルを提供しているプロバイダーです。量子化と料金はプロバイダーごとに異なります。",
+      quant: "量子化",
+      uptime: "稼働率",
+      relatedNews: "このモデルに言及した記事",
+      noNews: "このモデルを扱った記事はまだありません。",
+      alternatives: "近い価格帯の代替モデル",
+      alternativesNote: "同じティアで出力料金が近い順です。",
+      notFound: "モデルが見つかりません。",
+      tokens: "トークン",
+    },
     dashboard: {
       title: "グローバルLLMモデルカタログ",
       subtitle: "OpenAI、Anthropic、Google、AWS Bedrockなど142以上のLLM公式ドキュメント（Official Docs）に基づく全数比較",
@@ -1169,6 +1301,39 @@ export const translations: Record<Language, TranslationDictionary> = {
       step4: "计算 Vercel, Railway, Cloud GPU 月度 OpEx 基础设施成本",
       step5: "通过 Gemini 2.5 Flash 生成 7 大章节架构及 Mermaid 规范"
     },
+    modelDetail: {
+      back: "返回目录",
+      copyLink: "复制链接",
+      copied: "已复制",
+      firstSeen: "首次发现",
+      lastVerified: "最后确认",
+      staleNote: "该模型不在每周自动同步范围内。以下为最后一次确认时的数据。",
+      summaryNote: "OpenRouter 提供的摘要",
+      fullDescription: "完整说明请见官方文档",
+      keyFacts: "核心规格",
+      input: "输入",
+      output: "输出",
+      per1m: "每百万 token",
+      context: "上下文",
+      maxOutput: "最大输出",
+      modality: "输入输出形式",
+      license: "许可",
+      reasoning: "支持推理",
+      apiModelId: "API 模型 ID",
+      benchmarks: "基准测试",
+      rank: "目录内第 {r} 名 / 共 {n} 个",
+      benchSource: "LMArena (CC-BY 4.0) · GPQA Diamond: Epoch AI (CC-BY 4.0)",
+      servingProviders: "服务供应商",
+      servingNote: "提供同一模型的供应商。各家的量化方式与价格不同。",
+      quant: "量化",
+      uptime: "可用率",
+      relatedNews: "提及该模型的文章",
+      noNews: "暂无文章涉及该模型。",
+      alternatives: "相近价位的替代模型",
+      alternativesNote: "同一等级中输出价格最接近者优先。",
+      notFound: "未找到该模型。",
+      tokens: "token",
+    },
     dashboard: {
       title: "全球大语言模型目录",
       subtitle: "基于官方文档 (Official Docs) 权威出处对比 OpenAI、Anthropic、Google 等 142+ 全部模型规格与价格",
@@ -1438,6 +1603,39 @@ export const translations: Record<Language, TranslationDictionary> = {
       step3: "Simulando tráfico para 3 combinaciones de modelos (Best, Smart, Budget)",
       step4: "Calculando costes OpEx mensuales de infraestructura (Vercel, Railway, Cloud GPU)",
       step5: "Sintetizando arquitectura de 7 secciones y Mermaid con Gemini 2.5 Flash"
+    },
+    modelDetail: {
+      back: "Volver al catálogo",
+      copyLink: "Copiar enlace",
+      copied: "Copiado",
+      firstSeen: "Detectado por primera vez",
+      lastVerified: "Última verificación",
+      staleNote: "Este modelo no entra en la sincronización semanal. Los valores corresponden a la última verificación.",
+      summaryNote: "Resumen de OpenRouter",
+      fullDescription: "Descripción completa en la documentación oficial",
+      keyFacts: "Especificaciones clave",
+      input: "Entrada",
+      output: "Salida",
+      per1m: "por 1M de tokens",
+      context: "Contexto",
+      maxOutput: "Salida máxima",
+      modality: "Modalidades",
+      license: "Licencia",
+      reasoning: "Razonamiento",
+      apiModelId: "ID de modelo de API",
+      benchmarks: "Benchmarks",
+      rank: "#{r} de {n} en el catálogo",
+      benchSource: "LMArena (CC-BY 4.0) · GPQA Diamond: Epoch AI (CC-BY 4.0)",
+      servingProviders: "Proveedores que lo sirven",
+      servingNote: "Proveedores que sirven este mismo modelo. La cuantización y el precio varían.",
+      quant: "Cuantización",
+      uptime: "Disponibilidad",
+      relatedNews: "Artículos que mencionan este modelo",
+      noNews: "Todavía no hay artículos sobre este modelo.",
+      alternatives: "Alternativas de precio similar",
+      alternativesNote: "Mismo nivel, precio de salida más cercano primero.",
+      notFound: "Modelo no encontrado.",
+      tokens: "tokens",
     },
     dashboard: {
       title: "Explorador de Especificaciones y Precios de Modelos LLM",
@@ -1709,6 +1907,39 @@ export const translations: Record<Language, TranslationDictionary> = {
       step4: "Berechnung monatlicher OpEx-Infrastrukturkosten (Vercel, Railway, Cloud GPU)",
       step5: "Erstellung der 7-Kapitel-Architektur & Mermaid-Spezifikation mit Gemini 2.5 Flash"
     },
+    modelDetail: {
+      back: "Zurück zum Katalog",
+      copyLink: "Link kopieren",
+      copied: "Kopiert",
+      firstSeen: "Zuerst gesehen",
+      lastVerified: "Zuletzt geprüft",
+      staleNote: "Dieses Modell ist nicht Teil der wöchentlichen Synchronisierung. Die Werte stammen von der letzten Prüfung.",
+      summaryNote: "Zusammenfassung von OpenRouter",
+      fullDescription: "Vollständige Beschreibung in der offiziellen Doku",
+      keyFacts: "Wichtigste Daten",
+      input: "Eingabe",
+      output: "Ausgabe",
+      per1m: "pro 1 Mio. Tokens",
+      context: "Kontext",
+      maxOutput: "Max. Ausgabe",
+      modality: "Modalitäten",
+      license: "Lizenz",
+      reasoning: "Reasoning",
+      apiModelId: "API-Modell-ID",
+      benchmarks: "Benchmarks",
+      rank: "Platz {r} von {n} im Katalog",
+      benchSource: "LMArena (CC-BY 4.0) · GPQA Diamond: Epoch AI (CC-BY 4.0)",
+      servingProviders: "Anbieter",
+      servingNote: "Anbieter, die dasselbe Modell ausliefern. Quantisierung und Preis unterscheiden sich.",
+      quant: "Quantisierung",
+      uptime: "Verfügbarkeit",
+      relatedNews: "Artikel zu diesem Modell",
+      noNews: "Noch keine Artikel zu diesem Modell.",
+      alternatives: "Alternativen in ähnlicher Preislage",
+      alternativesNote: "Gleiche Stufe, nächster Ausgabepreis zuerst.",
+      notFound: "Modell nicht gefunden.",
+      tokens: "Tokens",
+    },
     dashboard: {
       title: "LLM Modell Spezifikationen & Preis-Explorer",
       subtitle: "Vergleichen Sie API-Preise, Kontextfenster, Performance-Benchmarks und Spezifikationen von über 50 globalen LLM-Modellen.",
@@ -1978,6 +2209,39 @@ export const translations: Record<Language, TranslationDictionary> = {
       step3: "Simulation de trafic pour 3 combinaisons de modèles (Best, Smart, Budget)",
       step4: "Calcul des coûts d'infrastructure OpEx mensuels (Vercel, Railway, Cloud GPU)",
       step5: "Synthèse de l'architecture en 7 sections et Mermaid avec Gemini 2.5 Flash"
+    },
+    modelDetail: {
+      back: "Retour au catalogue",
+      copyLink: "Copier le lien",
+      copied: "Copié",
+      firstSeen: "Vu pour la première fois",
+      lastVerified: "Dernière vérification",
+      staleNote: "Ce modèle ne fait pas partie de la synchronisation hebdomadaire. Les valeurs datent de la dernière vérification.",
+      summaryNote: "Résumé fourni par OpenRouter",
+      fullDescription: "Description complète dans la documentation officielle",
+      keyFacts: "Caractéristiques clés",
+      input: "Entrée",
+      output: "Sortie",
+      per1m: "par million de tokens",
+      context: "Contexte",
+      maxOutput: "Sortie max.",
+      modality: "Modalités",
+      license: "Licence",
+      reasoning: "Raisonnement",
+      apiModelId: "ID de modèle API",
+      benchmarks: "Benchmarks",
+      rank: "{r}e sur {n} dans le catalogue",
+      benchSource: "LMArena (CC-BY 4.0) · GPQA Diamond: Epoch AI (CC-BY 4.0)",
+      servingProviders: "Fournisseurs",
+      servingNote: "Fournisseurs qui servent ce même modèle. Quantification et prix varient.",
+      quant: "Quantification",
+      uptime: "Disponibilité",
+      relatedNews: "Articles mentionnant ce modèle",
+      noNews: "Aucun article ne traite encore ce modèle.",
+      alternatives: "Alternatives à prix proche",
+      alternativesNote: "Même niveau, prix de sortie le plus proche d'abord.",
+      notFound: "Modèle introuvable.",
+      tokens: "tokens",
     },
     dashboard: {
       title: "Explorateur de Tarifs et Spécifications des Modèles LLM",
