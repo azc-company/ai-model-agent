@@ -62,6 +62,7 @@ export interface ModelSpec {
   first_seen_at?: string | null;   // 카탈로그 최초 발견일 (UTC)
   source?: string;                 // 'feed' = 주간 동기화, 'seed' = 초기 수작업 데이터
   updated_at?: string;
+  released_at?: string | null;    // 공급사 출시 시각 (OpenRouter created). 계열의 "최신" 판정 기준
   hardware_requirements?: any;
 }
 

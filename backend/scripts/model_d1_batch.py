@@ -46,7 +46,7 @@ _UPSERT_COLUMNS = (
     "parameter_count_b", "architecture", "context_window", "max_output_tokens", "modality",
     "description", "official_url", "source_docs_url", "api_pricing", "quota",
     "is_verified", "litellm_id", "supports_reasoning", "supports_web_search", "is_deprecated",
-    "hardware_requirements", "source",
+    "hardware_requirements", "source", "released_at",
 )
 UPSERT_SET = ",\n  ".join(
     ["description_i18n = CASE WHEN models.description IS excluded.description "
@@ -224,6 +224,10 @@ def convert_model_to_sql(ext: Dict) -> Optional[str]:
         "currency": "USD"
     }
 
+    # 출시 시각. 피드의 created(유닉스 초)를 그대로 쓴다. 없으면 NULL — 화면은 버전 숫자로 대신 정렬한다.
+    created = ext.get("created")
+    released_sql = f"datetime({int(created)}, 'unixepoch')" if isinstance(created, (int, float)) and created > 0 else "NULL"
+
     # INSERT OR REPLACE 는 충돌 시 행을 지우고 다시 넣는다. 그래서 컬럼 목록에 없는
     # description_i18n 이 매주 NULL 로 날아가고(번역 배치가 430건을 다시 번역했다),
     # 최초 발견일도 남길 방법이 없었다. ON CONFLICT 로 필요한 컬럼만 갱신한다.
@@ -237,7 +241,7 @@ def convert_model_to_sql(ext: Dict) -> Optional[str]:
   parameter_count_b, architecture, context_window, max_output_tokens, modality,
   description, official_url, source_docs_url, api_pricing, quota, benchmarks,
   is_verified, litellm_id, supports_reasoning, supports_web_search, is_deprecated, is_new, hardware_requirements,
-  source, first_seen_at
+  source, first_seen_at, released_at
 ) VALUES (
   '{escape_sql(sanitized_id)}',
   '{escape_sql(pid)}',
@@ -265,7 +269,8 @@ def convert_model_to_sql(ext: Dict) -> Optional[str]:
   0,
   '{escape_sql(json.dumps({}, ensure_ascii=False))}',
   'feed',
-  datetime('now')
+  datetime('now'),
+  {released_sql}
 )
 ON CONFLICT(id) DO UPDATE SET
   {UPSERT_SET};"""

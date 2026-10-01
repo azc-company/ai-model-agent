@@ -12,6 +12,20 @@ import { useLanguage } from '../context/LanguageContext';
 import { fetchModelDetail } from '../api';
 import { rankOf, alternativesFor, isTruncated, apiModelIdOf } from '../data/modelDetail';
 import { track } from '../analytics';
+import { baseName, familyKey, shortName, type ModelFamily } from '../data/modelFamilies';
+
+// 유료 모델의 요청·토큰 한도(RPM/TPM)는 공급사가 계정 등급별로 정하고 모델별로 공개하지
+// 않는다. 숫자를 지어내지 않고 공식 문서로 보낸다. 2026-10-01 에 열리는지 확인한 주소만 둔다
+// (Mistral·DeepSeek 문서 주소는 404/응답 없음이라 뺐다).
+const RATE_LIMIT_DOCS: Record<string, string> = {
+  openai: 'https://platform.openai.com/docs/guides/rate-limits',
+  anthropic: 'https://docs.anthropic.com/en/api/rate-limits',
+  google: 'https://ai.google.dev/gemini-api/docs/rate-limits',
+  'x-ai': 'https://docs.x.ai/docs/key-information/consumption-and-rate-limits',
+  cohere: 'https://docs.cohere.com/docs/rate-limits',
+  groq: 'https://console.groq.com/docs/rate-limits',
+};
+const OPENROUTER_LIMITS = 'https://openrouter.ai/docs/api/reference/limits';
 
 interface RelatedNews { id: string; title: string; report_type?: string; created_at: string }
 interface ServingProvider {
@@ -21,6 +35,7 @@ interface ServingProvider {
 
 interface Props {
   model: ModelSpec;
+  family?: ModelFamily;
   allModels: ModelSpec[];
   comparedIds: string[];
   onBack: () => void;
@@ -34,6 +49,14 @@ const money = (n: number | null | undefined) =>
   n == null ? '—' : `$${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })}`;
 const num = (n: number | null | undefined) => (n ? n.toLocaleString() : '—');
 
+// 출시일. 시드 모델은 출시 시각이 없고 first_seen_at 은 우리가 들여온 날(2026-08-01)이라
+// 출시일로 쓰면 Claude 3 Opus 가 2026년 모델처럼 보인다. 이름에 날짜가 있으면 그걸 쓴다.
+const releasedLabel = (m: ModelSpec) => {
+  if (m.released_at) return m.released_at.slice(0, 10);
+  const d = /\((\d{4})(\d{2})(\d{2})\)|\((\d{4}-\d{2}-\d{2})\)/.exec(m.name);
+  return d ? (d[4] || `${d[1]}-${d[2]}-${d[3]}`) : '—';
+};
+
 const Card: React.FC<{ title: string; note?: string; children: React.ReactNode }> = ({ title, note, children }) => (
   <section className="bg-white dark:bg-slate-900 rounded-2xl p-5 sm:p-6 border border-slate-200 dark:border-slate-800 shadow-sm space-y-3">
     <div>
@@ -45,7 +68,7 @@ const Card: React.FC<{ title: string; note?: string; children: React.ReactNode }
 );
 
 export const ModelDetailView: React.FC<Props> = ({
-  model, allModels, comparedIds, onBack, onOpenModel, onOpenArticle, onShowCode, onToggleCompare,
+  model, family, allModels, comparedIds, onBack, onOpenModel, onOpenArticle, onShowCode, onToggleCompare,
 }) => {
   const { t } = useLanguage();
   const d = t.modelDetail;
@@ -74,9 +97,20 @@ export const ModelDetailView: React.FC<Props> = ({
 
   const arena = useMemo(() => rankOf(model, allModels, (m) => m.benchmarks?.arena_elo), [model, allModels]);
   const gpqa = useMemo(() => rankOf(model, allModels, (m) => m.benchmarks?.gpqa), [model, allModels]);
-  const alternatives = useMemo(() => alternativesFor(model, allModels), [model, allModels]);
+  // 같은 계열의 다른 버전은 위 '버전' 표에 있으니 대안에서 뺀다.
+  const alternatives = useMemo(() => {
+    const mine = familyKey(model);
+    return alternativesFor(model, allModels.filter((m) => m.id === model.id || familyKey(m) !== mine));
+  }, [model, allModels]);
   const docsUrl = model.source_docs_url || model.official_url;
   const isCompared = comparedIds.includes(model.id);
+  const versions = family?.versions || [];
+  // 지금 보는 모델이 batch 변형이어도 같은 버전의 표준·변형을 함께 보여준다.
+  const current = versions.find((v) => baseName(v.model) === baseName(model));
+  const standard = current?.model || model;
+  const viaOpenRouter = /openrouter\.ai\/models\//.test(model.official_url || '');
+  const limitsDoc = RATE_LIMIT_DOCS[model.provider_id] || (viaOpenRouter ? OPENROUTER_LIMITS : '');
+  const priceLine = (m: ModelSpec) => `${money(m.api_pricing?.input_price_per_1m)} / ${money(m.api_pricing?.output_price_per_1m)}`;
   const rankText = (r: { rank: number; of: number } | null) =>
     r ? d.rank.replace('{r}', String(r.rank)).replace('{n}', String(r.of)) : '';
 
@@ -180,6 +214,86 @@ export const ModelDetailView: React.FC<Props> = ({
         <p className="text-2xs text-muted font-bold">
           {d.apiModelId}: <code className="font-mono text-slate-700 dark:text-slate-300">{apiModelIdOf(model)}</code>
         </p>
+      </Card>
+
+      {/* 버전 — 같은 계열에 여러 버전이 있을 때 */}
+      {versions.length > 1 && (
+        <Card title={`${d.versions} (${versions.length})`} note={d.versionsNote}>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="text-left text-muted font-bold border-b border-slate-200 dark:border-slate-800">
+                  <th className="py-2 pr-3">{d.versions}</th>
+                  <th className="py-2 pr-3">{d.released}</th>
+                  <th className="py-2 pr-3 text-right">{d.input} / {d.output}</th>
+                  <th className="py-2 pr-3 text-right">{d.context}</th>
+                  <th className="py-2 text-right">LMArena</th>
+                </tr>
+              </thead>
+              <tbody>
+                {versions.map((v) => {
+                  const here = baseName(v.model) === baseName(model);
+                  return (
+                    <tr key={v.model.id}
+                      className={`border-b border-slate-100 dark:border-slate-800/60 ${here ? 'bg-indigo-50 dark:bg-cyan-950/30' : ''}`}>
+                      <td className="py-2 pr-3">
+                        {here ? (
+                          <span className="font-black text-slate-900 dark:text-white">{shortName(v.model)} <span className="text-2xs text-indigo-600 dark:text-cyan-400">· {d.current}</span></span>
+                        ) : (
+                          <button onClick={() => onOpenModel(v.model.id)}
+                            className="focus-ring font-black text-slate-800 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-cyan-400 hover:underline underline-offset-4 text-left">
+                            {shortName(v.model)}
+                          </button>
+                        )}
+                        {Object.keys(v.variants).length > 0 && (
+                          <span className="ml-1.5 text-2xs text-muted font-bold">{Object.keys(v.variants).map((k) => k[0].toUpperCase() + k.slice(1)).join(' · ')}</span>
+                        )}
+                      </td>
+                      <td className="py-2 pr-3 font-mono text-muted">{releasedLabel(v.model)}</td>
+                      <td className="py-2 pr-3 font-mono text-right tabular-nums">{priceLine(v.model)}</td>
+                      <td className="py-2 pr-3 font-mono text-right tabular-nums">{num(v.model.context_window)}</td>
+                      <td className="py-2 font-mono text-right tabular-nums">{v.model.benchmarks?.arena_elo ?? '—'}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
+
+      {/* 과금 방식·한도 */}
+      <Card title={d.pricingLimits}>
+        <ul className="divide-y divide-slate-100 dark:divide-slate-800 text-sm">
+          <li className="py-2.5 flex items-baseline justify-between gap-3">
+            <span className="font-black text-slate-900 dark:text-white">{d.standard}</span>
+            <span className="font-mono tabular-nums">{priceLine(standard)} <span className="text-2xs text-muted">{d.per1m}</span></span>
+          </li>
+          {current?.variants.batch && (
+            <li className="py-2.5 flex items-baseline justify-between gap-3">
+              <span><span className="font-black text-slate-900 dark:text-white">Batch</span> <span className="text-2xs text-muted font-semibold">{d.batchNote}</span></span>
+              <span className="font-mono tabular-nums">{priceLine(current.variants.batch)}</span>
+            </li>
+          )}
+          {current?.variants.free && (
+            <li className="py-2.5 space-y-0.5">
+              <div className="flex items-baseline justify-between gap-3">
+                <span className="font-black text-slate-900 dark:text-white">{d.freeLabel}</span>
+                <span className="font-mono">$0</span>
+              </div>
+              <p className="text-2xs text-muted font-semibold">{d.freeLimits}</p>
+            </li>
+          )}
+          <li className="py-2.5 text-xs text-muted font-semibold">
+            {d.paidLimits}
+            {limitsDoc && (
+              <> · <a href={limitsDoc} target="_blank" rel="noopener noreferrer"
+                onClick={() => track('external_link_click', { label: `${model.provider_name} limits` })}
+                className="underline hover:text-indigo-600 dark:hover:text-cyan-400">
+                {(RATE_LIMIT_DOCS[model.provider_id] ? d.limitsDoc.replace('{p}', model.provider_name) : d.openRouterLimits)} ↗</a></>
+            )}
+          </li>
+        </ul>
       </Card>
 
       {/* 벤치마크 — 값이 있을 때만 */}

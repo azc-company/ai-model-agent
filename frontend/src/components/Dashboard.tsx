@@ -4,6 +4,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { fetchModels, fetchProviders } from '../api';
 import { CodeSnippetModal } from './CodeSnippetModal';
 import { ModelDetailView } from './ModelDetailView';
+import { buildFamilies, collapseToFamilies, familyKey } from '../data/modelFamilies';
 import { Sparkles } from 'lucide-react';
 import { FilterSheet, type CatalogFilters } from './FilterSheet';
 import { track } from '../analytics';
@@ -83,6 +84,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
   type Density = 'compact' | 'comfortable';
   const [density, setDensity] = useState<Density>(() => localStorage.getItem('catalog-density') === 'compact' ? 'compact' : 'comfortable');
   const changeDensity = (next: Density) => { setDensity(next); localStorage.setItem('catalog-density', next); };
+  // 같은 모델의 변형(batch/free)·구버전을 한 장으로 묶는다. 펼쳐 보고 싶은 사람은 토글로 전부 본다.
+  const [showAllVersions, setShowAllVersions] = useState<boolean>(() => localStorage.getItem('catalog-all-versions') === '1');
+  const toggleAllVersions = () => setShowAllVersions((v) => { localStorage.setItem('catalog-all-versions', v ? '0' : '1'); return !v; });
 
   const currentFilters: CatalogFilters = { provider: selectedProvider, tier: selectedTier, license: selectedLicense, reasoningOnly, webSearchOnly, verifiedOnly, onlyNew };
   const applyFilters = (filters: CatalogFilters) => {
@@ -97,7 +101,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
   // 기본 정렬은 최근에 들어온 순이다. 예전 기본값인 Arena ELO 는 8월 시드 데이터에만
   // 값이 있어서(612개 중 169개), 새로 들어온 모델은 전부 N/A 로 목록 맨 뒤에 가라앉았다.
-  type SortKey = 'name' | 'provider' | 'tier' | 'context' | 'input_price' | 'output_price' | 'arena_elo' | 'rpm' | 'is_new';
+  type SortKey = 'name' | 'provider' | 'tier' | 'context' | 'input_price' | 'output_price' | 'arena_elo' | 'max_output' | 'is_new';
   const [sortKey, setSortKey] = useState<SortKey>('is_new');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
 
@@ -240,7 +244,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
     return { fresh, longest, value, price: value ? blended(value) : 0 };
   }, [models]);
 
-  const sortedModels = [...filteredModels].sort((a, b) => {
+  const families = useMemo(() => buildFamilies(models), [models]);
+  // 필터·검색은 개별 모델에 그대로 걸고, 통과한 것 중 계열별 최신 하나만 남긴다.
+  // 그래서 "Opus 4.5" 로 검색하면 Opus 4.5 카드가 그대로 나온다.
+  const visibleModels = showAllVersions ? filteredModels : collapseToFamilies(filteredModels, families);
+
+  const sortedModels = [...visibleModels].sort((a, b) => {
     let av: number | string = 0;
     let bv: number | string = 0;
     switch (sortKey) {
@@ -252,7 +261,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
       case 'input_price': av = a.api_pricing.input_price_per_1m; bv = b.api_pricing.input_price_per_1m; break;
       case 'output_price': av = a.api_pricing.output_price_per_1m; bv = b.api_pricing.output_price_per_1m; break;
       case 'arena_elo': av = a.benchmarks.arena_elo ?? -1; bv = b.benchmarks.arena_elo ?? -1; break;
-      case 'rpm':       av = a.quota?.rpm ?? 0; bv = b.quota?.rpm ?? 0; break;
+      case 'max_output': av = a.max_output_tokens ?? 0; bv = b.max_output_tokens ?? 0; break;
     }
     if (typeof av === 'string' && typeof bv === 'string') {
       return sortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
@@ -299,6 +308,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
       <>
         <ModelDetailView
           model={detailModel}
+          family={families.get(familyKey(detailModel))}
           allModels={models}
           comparedIds={effectiveCompareIds}
           onBack={closeDetail}
@@ -566,7 +576,13 @@ export const Dashboard: React.FC<DashboardProps> = ({
       {/* Model Count Info & Clean Integrated Sort Selector */}
       <div className="flex flex-wrap items-center justify-between gap-3 text-xs sm:text-sm text-muted px-1 font-bold">
         <div className="flex items-center gap-2">
-          <span className="font-black text-accent text-base">{sortedModels.length}</span> {t.dashboard.modelsFound}
+          <span className="font-black text-accent text-base">{sortedModels.length}</span>
+          {showAllVersions ? <> {t.dashboard.modelsFound}</>
+            : <>{t.dashboard.familiesFound} <span className="text-2xs font-semibold">({t.dashboard.ofModels.replace('{m}', String(filteredModels.length))})</span></>}
+          <label className="ml-2 inline-flex items-center gap-1.5 text-xs font-extrabold cursor-pointer select-none">
+            <input type="checkbox" checked={showAllVersions} onChange={toggleAllVersions} className="accent-cyan-600" />
+            {t.dashboard.showAllVersions}
+          </label>
         </div>
         <div className="flex items-center gap-2">
           <span className="text-muted text-xs font-extrabold">{t.dashboard.sortBy}</span>
@@ -703,6 +719,19 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     </div>
                   </div>
 
+                  {(() => {
+                    const fam = families.get(familyKey(model));
+                    if (!fam || fam.size < 2 || showAllVersions) return null;
+                    const kinds = new Set(fam.versions.flatMap((v) => Object.keys(v.variants)));
+                    return (
+                      <button onClick={() => openDetail(model.id)}
+                        className="focus-ring -mt-2 mb-3 text-2xs font-black text-indigo-700 dark:text-cyan-300 hover:underline underline-offset-4 text-left">
+                        {[fam.versions.length > 1 ? t.dashboard.versionsCount.replace('{n}', String(fam.versions.length)) : '',
+                          kinds.has('batch') ? 'Batch' : '', kinds.has('free') ? 'Free' : ''].filter(Boolean).join(' · ')} ▸
+                      </button>
+                    );
+                  })()}
+
                   {/* Pricing Info */}
                   <div className="flex items-center justify-between text-xs pt-3 border-t border-slate-200 dark:border-slate-800 mb-4">
                     <div>
@@ -787,8 +816,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   >Output Price<SortIcon col="output_price" /></th>
                   <th
                     className="py-3.5 px-4 cursor-pointer hover:text-blue-600 dark:hover:text-cyan-400 select-none transition-colors"
-                    onClick={() => handleSort('rpm')}
-                  >Quota RPM<SortIcon col="rpm" /></th>
+                    onClick={() => handleSort('max_output')}
+                  >Max Output<SortIcon col="max_output" /></th>
                   <th
                     className="py-3.5 px-4 cursor-pointer hover:text-blue-600 dark:hover:text-cyan-400 select-none transition-colors"
                     onClick={() => handleSort('arena_elo')}
@@ -828,7 +857,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                         ${model.api_pricing.output_price_per_1m.toFixed(3)}
                       </td>
                       <td className="py-3 px-4 font-mono font-bold text-blue-600 dark:text-cyan-300 text-xs">
-                        {model.quota?.rpm ? `${model.quota.rpm.toLocaleString()}` : '-'}
+                        {model.max_output_tokens ? `${(model.max_output_tokens / 1000).toLocaleString()}k` : '-'}
                       </td>
                       <td className="py-3 px-4 font-mono font-extrabold text-warn text-xs">
                         {model.benchmarks.arena_elo ?? '-'}

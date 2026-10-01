@@ -48,6 +48,18 @@ export interface TranslationDictionary {
     step5: string;
   };
   modelDetail: {
+    versions: string;
+    versionsNote: string;
+    released: string;
+    current: string;
+    pricingLimits: string;
+    standard: string;
+    batchNote: string;
+    freeLabel: string;
+    freeLimits: string;
+    paidLimits: string;
+    limitsDoc: string;
+    openRouterLimits: string;
     back: string;
     copyLink: string;
     copied: string;
@@ -81,6 +93,10 @@ export interface TranslationDictionary {
     tokens: string;
   };
   dashboard: {
+    familiesFound: string;
+    ofModels: string;
+    showAllVersions: string;
+    versionsCount: string;
     title: string;
     subtitle: string;
     searchPlaceholder: string;
@@ -363,6 +379,18 @@ export const translations: Record<Language, TranslationDictionary> = {
       step5: "Gemini 2.5 Flash 기반 7대 섹션 아키텍처 및 Mermaid 다이어그램 명세서 작성"
     },
     modelDetail: {
+      versions: "버전",
+      versionsNote: "같은 계열의 버전입니다. 이름을 누르면 그 버전으로 이동합니다.",
+      released: "출시",
+      current: "보는 중",
+      pricingLimits: "과금 방식·한도",
+      standard: "표준",
+      batchNote: "비동기 일괄 처리 — 결과를 바로 받지 않는 대신 저렴합니다",
+      freeLabel: "무료",
+      freeLimits: "분당 20회 · 하루 50회 (OpenRouter 크레딧 $10 이상 구매 시 하루 1,000회) — OpenRouter 기준",
+      paidLimits: "유료 사용의 분당 요청·토큰 한도는 계정 등급마다 다르며 모델별 숫자로 공개되지 않습니다",
+      limitsDoc: "{p} 공식 한도 문서",
+      openRouterLimits: "OpenRouter 한도 문서",
       back: "카탈로그로",
       copyLink: "링크 복사",
       copied: "복사됨",
@@ -396,6 +424,10 @@ export const translations: Record<Language, TranslationDictionary> = {
       tokens: "토큰",
     },
     dashboard: {
+      familiesFound: "개 모델 계열",
+      ofModels: "전체 {m}개 모델",
+      showAllVersions: "모든 버전 보기",
+      versionsCount: "버전 {n}개",
       title: "글로벌 LLM 모델 카탈로그",
       subtitle: "OpenAI, Anthropic, Google, AWS Bedrock, DeepSeek, Meta 등 580+ AI 전체 모델 공식 출처(Official Docs) 기반 스펙, 비용, 할당량 및 벤치마크 비교",
       searchPlaceholder: "모델명, 프로바이더, 라이선스 검색...",
@@ -676,6 +708,18 @@ export const translations: Record<Language, TranslationDictionary> = {
       step5: "Synthesizing 7-Section Architecture & Mermaid Spec with Gemini 2.5 Flash"
     },
     modelDetail: {
+      versions: "Versions",
+      versionsNote: "Versions in the same family. Click a name to open that version.",
+      released: "Released",
+      current: "viewing",
+      pricingLimits: "Pricing & limits",
+      standard: "Standard",
+      batchNote: "Asynchronous batch processing — cheaper, results are not immediate",
+      freeLabel: "Free",
+      freeLimits: "20 requests/min · 50/day (1,000/day after buying $10+ in OpenRouter credits) — per OpenRouter",
+      paidLimits: "Paid rate limits (requests and tokens per minute) depend on your account tier and are not published per model",
+      limitsDoc: "{p} rate limit docs",
+      openRouterLimits: "OpenRouter limit docs",
       back: "Back to catalog",
       copyLink: "Copy link",
       copied: "Copied",
@@ -709,6 +753,10 @@ export const translations: Record<Language, TranslationDictionary> = {
       tokens: "tokens",
     },
     dashboard: {
+      familiesFound: " model families",
+      ofModels: "{m} models in total",
+      showAllVersions: "Show all versions",
+      versionsCount: "{n} versions",
       title: "Global LLM Model Catalog",
       subtitle: "Compare official specs, pricing, rate limits, and benchmarks for 580+ LLMs with verified official documentation source links",
       searchPlaceholder: "Search model name, provider, license...",
@@ -989,6 +1037,18 @@ export const translations: Record<Language, TranslationDictionary> = {
       step5: "Gemini 2.5 Flashによる7セクションアーキテクチャ＆Mermaid仕様書生成"
     },
     modelDetail: {
+      versions: "バージョン",
+      versionsNote: "同じ系列のバージョンです。名前を押すとそのバージョンに移動します。",
+      released: "公開日",
+      current: "表示中",
+      pricingLimits: "料金体系・制限",
+      standard: "標準",
+      batchNote: "非同期バッチ処理 — 結果はすぐに返りませんが安価です",
+      freeLabel: "無料",
+      freeLimits: "毎分20回 · 1日50回（OpenRouter クレジットを$10以上購入すると1日1,000回）— OpenRouter 基準",
+      paidLimits: "有料利用のリクエスト・トークン上限はアカウントのティアごとに異なり、モデル別の数値は公開されていません",
+      limitsDoc: "{p} 公式の制限ドキュメント",
+      openRouterLimits: "OpenRouter 制限ドキュメント",
       back: "カタログへ",
       copyLink: "リンクをコピー",
       copied: "コピーしました",
@@ -1022,6 +1082,10 @@ export const translations: Record<Language, TranslationDictionary> = {
       tokens: "トークン",
     },
     dashboard: {
+      familiesFound: "件のモデル系列",
+      ofModels: "全{m}件のモデル",
+      showAllVersions: "すべてのバージョンを表示",
+      versionsCount: "バージョン {n}件",
       title: "グローバルLLMモデルカタログ",
       subtitle: "OpenAI、Anthropic、Google、AWS Bedrockなど142以上のLLM公式ドキュメント（Official Docs）に基づく全数比較",
       searchPlaceholder: "モデル名、プロバイダー、ライセンスを検索...",
@@ -1302,6 +1366,18 @@ export const translations: Record<Language, TranslationDictionary> = {
       step5: "通过 Gemini 2.5 Flash 生成 7 大章节架构及 Mermaid 规范"
     },
     modelDetail: {
+      versions: "版本",
+      versionsNote: "同一系列的版本。点击名称可进入该版本。",
+      released: "发布",
+      current: "当前查看",
+      pricingLimits: "计费方式与限额",
+      standard: "标准",
+      batchNote: "异步批处理 — 结果不即时返回，但更便宜",
+      freeLabel: "免费",
+      freeLimits: "每分钟 20 次 · 每天 50 次（在 OpenRouter 购买 $10 以上额度后每天 1,000 次）— 以 OpenRouter 为准",
+      paidLimits: "付费使用的每分钟请求与 token 限额因账户等级而异，不按模型公开",
+      limitsDoc: "{p} 官方限额文档",
+      openRouterLimits: "OpenRouter 限额文档",
       back: "返回目录",
       copyLink: "复制链接",
       copied: "已复制",
@@ -1335,6 +1411,10 @@ export const translations: Record<Language, TranslationDictionary> = {
       tokens: "token",
     },
     dashboard: {
+      familiesFound: " 个模型系列",
+      ofModels: "共 {m} 个模型",
+      showAllVersions: "显示所有版本",
+      versionsCount: "{n} 个版本",
       title: "全球大语言模型目录",
       subtitle: "基于官方文档 (Official Docs) 权威出处对比 OpenAI、Anthropic、Google 等 142+ 全部模型规格与价格",
       searchPlaceholder: "搜索模型名称、提供商、许可证...",
@@ -1605,6 +1685,18 @@ export const translations: Record<Language, TranslationDictionary> = {
       step5: "Sintetizando arquitectura de 7 secciones y Mermaid con Gemini 2.5 Flash"
     },
     modelDetail: {
+      versions: "Versiones",
+      versionsNote: "Versiones de la misma familia. Pulsa un nombre para abrir esa versión.",
+      released: "Lanzamiento",
+      current: "viendo",
+      pricingLimits: "Precios y límites",
+      standard: "Estándar",
+      batchNote: "Procesamiento por lotes asíncrono — más barato, sin respuesta inmediata",
+      freeLabel: "Gratis",
+      freeLimits: "20 solicitudes/min · 50/día (1.000/día tras comprar $10+ en créditos de OpenRouter) — según OpenRouter",
+      paidLimits: "Los límites de pago (solicitudes y tokens por minuto) dependen del nivel de la cuenta y no se publican por modelo",
+      limitsDoc: "Documentación de límites de {p}",
+      openRouterLimits: "Documentación de límites de OpenRouter",
       back: "Volver al catálogo",
       copyLink: "Copiar enlace",
       copied: "Copiado",
@@ -1638,6 +1730,10 @@ export const translations: Record<Language, TranslationDictionary> = {
       tokens: "tokens",
     },
     dashboard: {
+      familiesFound: " familias de modelos",
+      ofModels: "{m} modelos en total",
+      showAllVersions: "Mostrar todas las versiones",
+      versionsCount: "{n} versiones",
       title: "Explorador de Especificaciones y Precios de Modelos LLM",
       subtitle: "Compare precios API, ventana de contexto, benchmarks de rendimiento y especificaciones de más de 50 modelos LLM globales.",
       searchPlaceholder: "Buscar por nombre de modelo, proveedor...",
@@ -1908,6 +2004,18 @@ export const translations: Record<Language, TranslationDictionary> = {
       step5: "Erstellung der 7-Kapitel-Architektur & Mermaid-Spezifikation mit Gemini 2.5 Flash"
     },
     modelDetail: {
+      versions: "Versionen",
+      versionsNote: "Versionen derselben Modellfamilie. Namen anklicken, um die Version zu öffnen.",
+      released: "Veröffentlicht",
+      current: "angezeigt",
+      pricingLimits: "Preise & Limits",
+      standard: "Standard",
+      batchNote: "Asynchrone Batch-Verarbeitung — günstiger, Ergebnisse nicht sofort",
+      freeLabel: "Kostenlos",
+      freeLimits: "20 Anfragen/Min. · 50/Tag (1.000/Tag nach Kauf von mind. 10 $ OpenRouter-Guthaben) — laut OpenRouter",
+      paidLimits: "Bezahlte Limits (Anfragen und Tokens pro Minute) hängen von der Kontostufe ab und werden nicht pro Modell veröffentlicht",
+      limitsDoc: "Limit-Doku von {p}",
+      openRouterLimits: "Limit-Doku von OpenRouter",
       back: "Zurück zum Katalog",
       copyLink: "Link kopieren",
       copied: "Kopiert",
@@ -1941,6 +2049,10 @@ export const translations: Record<Language, TranslationDictionary> = {
       tokens: "Tokens",
     },
     dashboard: {
+      familiesFound: " Modellfamilien",
+      ofModels: "insgesamt {m} Modelle",
+      showAllVersions: "Alle Versionen anzeigen",
+      versionsCount: "{n} Versionen",
       title: "LLM Modell Spezifikationen & Preis-Explorer",
       subtitle: "Vergleichen Sie API-Preise, Kontextfenster, Performance-Benchmarks und Spezifikationen von über 50 globalen LLM-Modellen.",
       searchPlaceholder: "Nach Modellnamen, Anbieter suchen...",
@@ -2211,6 +2323,18 @@ export const translations: Record<Language, TranslationDictionary> = {
       step5: "Synthèse de l'architecture en 7 sections et Mermaid avec Gemini 2.5 Flash"
     },
     modelDetail: {
+      versions: "Versions",
+      versionsNote: "Versions de la même famille. Cliquez sur un nom pour ouvrir cette version.",
+      released: "Sortie",
+      current: "affichée",
+      pricingLimits: "Tarifs et limites",
+      standard: "Standard",
+      batchNote: "Traitement par lots asynchrone — moins cher, résultats non immédiats",
+      freeLabel: "Gratuit",
+      freeLimits: "20 requêtes/min · 50/jour (1 000/jour après achat d'au moins 10 $ de crédits OpenRouter) — selon OpenRouter",
+      paidLimits: "Les limites payantes (requêtes et tokens par minute) dépendent du niveau du compte et ne sont pas publiées par modèle",
+      limitsDoc: "Documentation des limites de {p}",
+      openRouterLimits: "Documentation des limites d'OpenRouter",
       back: "Retour au catalogue",
       copyLink: "Copier le lien",
       copied: "Copié",
@@ -2244,6 +2368,10 @@ export const translations: Record<Language, TranslationDictionary> = {
       tokens: "tokens",
     },
     dashboard: {
+      familiesFound: " familles de modèles",
+      ofModels: "{m} modèles au total",
+      showAllVersions: "Afficher toutes les versions",
+      versionsCount: "{n} versions",
       title: "Explorateur de Tarifs et Spécifications des Modèles LLM",
       subtitle: "Comparez les prix des API, la fenêtre de contexte, les benchmarks et les spécifications de plus de 50 modèles LLM mondiaux.",
       searchPlaceholder: "Rechercher par nom de modèle, fournisseur...",

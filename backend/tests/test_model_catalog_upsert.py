@@ -24,7 +24,7 @@ class CatalogUpsertTest(unittest.TestCase):
         self.db = sqlite3.connect(":memory:")
         self.db.executescript(re.search(r"CREATE TABLE IF NOT EXISTS models \(.*?\);", schema, re.S).group(0))
         cols = {r[1] for r in self.db.execute("PRAGMA table_info(models)")}
-        for c in ("description_i18n", "source", "first_seen_at"):
+        for c in ("description_i18n", "source", "first_seen_at", "released_at"):
             if c not in cols:
                 self.db.execute(f"ALTER TABLE models ADD COLUMN {c} TEXT")
         self.db.executescript(batch.convert_model_to_sql(EXT))
@@ -52,6 +52,15 @@ class CatalogUpsertTest(unittest.TestCase):
     def test_new_model_gets_a_first_seen_date(self):
         self.db.executescript(batch.convert_model_to_sql(dict(EXT, id="new/y", name="New: Y")))
         self.assertIsNotNone(self.db.execute("SELECT first_seen_at FROM models WHERE name='New: Y'").fetchone()[0])
+
+    def test_release_time_comes_from_feed_created(self):
+        # 같은 계열에서 "최신" 을 가르는 기준. 버전 숫자로는 Grok 4.20 이 4.7 보다 최신이 되어 버린다.
+        self.db.executescript(batch.convert_model_to_sql(dict(EXT, id="x/r", name="X: R", created=1758672000)))
+        self.assertEqual(self.db.execute("SELECT released_at FROM models WHERE name='X: R'").fetchone()[0],
+                         "2025-09-24 00:00:00")
+
+    def test_missing_created_leaves_release_time_empty(self):
+        self.assertIsNone(self.db.execute("SELECT released_at FROM models").fetchone()[0])
 
     def test_resync_does_not_duplicate_rows(self):
         self.db.executescript(batch.convert_model_to_sql(EXT))

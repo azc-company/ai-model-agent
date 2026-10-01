@@ -41,6 +41,9 @@ CREATE TABLE IF NOT EXISTS models (
   -- 'feed' = OpenRouter 동기화가 넣은 행, 'seed' = 수기로 넣은 행.
   -- 피드에서 사라진 모델을 지원 중단 처리할 때 수기 시드를 건드리지 않기 위해 필요하다.
   source TEXT DEFAULT 'seed',
+  -- 공급사 출시 시각(OpenRouter created). 같은 계열에서 "최신" 을 가르는 기준이다.
+  -- 버전 숫자로는 틀린다 — Grok 4.20 은 4.7 보다 숫자가 크지만 가장 먼저 나왔다.
+  released_at TEXT,
   updated_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
 
