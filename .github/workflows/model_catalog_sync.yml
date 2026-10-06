@@ -135,6 +135,11 @@ jobs:
             DELETE FROM model_snapshots WHERE captured_at < date('now', '-180 days');
           "
           echo "✅ 스냅샷 완료"
+          # 봇 방문 기록은 하루 약 2,000행씩 쌓인다(89% 가 MetaBot). 어드민은 최근 기간만
+          # 보므로 90일 넘은 행은 지운다. 사람 방문(analytics_events)은 양이 적어 그대로 둔다.
+          npx wrangler d1 execute llm-compass-db --remote --command "
+            DELETE FROM crawler_hits WHERE created_at < datetime('now', '-90 days');
+          "
 
       - name: 📊 7. 완료 확인
         run: |

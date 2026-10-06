@@ -1,9 +1,10 @@
 import * as Sentry from '@sentry/cloudflare';
 import { PROVIDERS, GPU_SPECS, TRENDING_TEMPLATES } from './data';
 import { calculateTCO } from './tco';
-import { recommendArchitecture, generateMarkdown } from './llm';
+import { recommendArchitecture } from './llm';
 import { ClientError } from './errors';
 import * as seo from './seo';
+import { withEdgeCache } from './edgeCache';
 export interface Env {
   DB: D1Database;
   ASSETS: Fetcher;
@@ -259,6 +260,14 @@ export default Sentry.withSentry(
   (env: Env) => ({ dsn: env.SENTRY_DSN, tracesSampleRate: 0 }),
   {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+    return withEdgeCache(request, ctx, () => handle(request, env, ctx));
+  },
+  },
+);
+
+let healthMemo: { at: number; row: any } | null = null;
+
+async function handle(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
 
     
@@ -284,12 +293,20 @@ export default Sentry.withSentry(
     if (url.pathname === '/health') {
       const NEWS_STALE_HOURS = 48;   // 배치는 하루 1회. 스케줄 지연을 감안한 여유.
       try {
-        const row: any = await env.DB.prepare(
-          `SELECT (SELECT COUNT(*) FROM models) AS models,
-                  (SELECT COUNT(*) FROM trend_news) AS news,
-                  (SELECT MAX(created_at) FROM trend_news) AS news_latest,
-                  (SELECT ran_at FROM batch_runs WHERE name = 'news') AS news_batch_ran`
-        ).first();
+        // 외부 모니터가 하루 약 500번 부르면서 매번 전체 개수를 세, 이 쿼리가 D1 읽기의
+        // 71% 였다. 같은 인스턴스 안에서는 1분간 결과를 재사용한다(판정 기준은 시간 단위라 충분).
+        if (!healthMemo || Date.now() - healthMemo.at > 60_000) {
+          healthMemo = {
+            at: Date.now(),
+            row: await env.DB.prepare(
+              `SELECT (SELECT COUNT(*) FROM models) AS models,
+                      (SELECT COUNT(*) FROM trend_news) AS news,
+                      (SELECT MAX(created_at) FROM trend_news) AS news_latest,
+                      (SELECT ran_at FROM batch_runs WHERE name = 'news') AS news_batch_ran`
+            ).first(),
+          };
+        }
+        const row: any = healthMemo.row;
 
         // 정체 = 배치가 돌지 않음. 재탕 기사를 막은 뒤로 새 원문이 없는 날은 기사가 0건이라
         // 최신 기사 시각만 보면 조용한 날을 정체로 오판한다. 배치의 정상 종료 기록과
@@ -577,20 +594,8 @@ export default Sentry.withSentry(
         const body = await request.json();
         const { results } = await env.DB.prepare('SELECT * FROM models').all();
         const models = results.map(r => ({ ...r, api_pricing: JSON.parse(r.api_pricing || '{}'), quota: JSON.parse(r.quota || '{}'), benchmarks: JSON.parse(r.benchmarks || '{}'), hardware_requirements: JSON.parse(r.hardware_requirements || '[]'), modality: JSON.parse(r.modality || '[]') }));
-        const rec = await recommendArchitecture(body, models, env);
+        const rec = await recommendArchitecture(body, models);
         return new Response(JSON.stringify(rec), {
-          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
-        });
-      } catch (err: any) {
-        return fail(err);
-      }
-    }
-
-    if (url.pathname === '/api/v1/generate/markdown' && request.method === 'POST') {
-      try {
-        const body = await request.json();
-        const md = await generateMarkdown(body, env);
-        return new Response(JSON.stringify(md), {
           headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
         });
       } catch (err: any) {
@@ -831,7 +836,15 @@ export default Sentry.withSentry(
         const targetLens = url.searchParams.get('lens');
         const { results } = await env.DB.prepare('SELECT * FROM trend_news ORDER BY created_at DESC').all();
 
-        let articles = results.map((n: any) => buildArticle(n));
+        // 목록에는 카드에 그리는 것만 싣는다. 예전에는 421건 전체의 본문까지 실어 원본 4.25MB
+        // (압축 1MB)였고 본문이 62% 였다. 기사가 하루 8건씩 늘어 계속 커졌다. 본문·수치·의견은
+        // 기사를 열 때 /api/v1/news/articles/:id 로 받는다. (key_numbers·our_take·open_questions
+        // 는 SPA 가 목록에서 쓰지 않는다.)
+        let articles = results.map((n: any) => {
+          const card: any = buildArticle(n);
+          for (const k of ['blog_summary', 'key_numbers', 'our_take', 'open_questions']) delete card[k];
+          return card;
+        });
 
         if (targetLens && targetLens !== 'all' && targetLens !== 'new') {
           if (targetLens === 'synthesized') {
@@ -902,6 +915,4 @@ export default Sentry.withSentry(
 
     // Fallthrough to Static Assets (Frontend)
     return env.ASSETS.fetch(request);
-  },
-  },
-);
+}

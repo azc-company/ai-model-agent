@@ -370,7 +370,7 @@ export const translations: Record<Language, TranslationDictionary> = {
       concurrency: "동시 요청 수"
     },
     researchProgress: {
-      title: "AI 솔루션 아키텍트 실시간 심층 분석 중",
+      title: "입력한 조건으로 아키텍처 계산 중",
       subtitle: "고객 요구사항을 바탕으로 최적의 LLM 조합과 OpEx 호스팅 인프라 비용을 산출하고 있습니다...",
       step1: "고객 자연어 요구사항 및 워크로드 스펙 분석 (Intent & SLA)",
       step2: "50+ 글로벌 LLM 모델 데이터베이스 & Arena Elo 벤치마크 스캔",
@@ -503,9 +503,9 @@ export const translations: Record<Language, TranslationDictionary> = {
     },
     advisorModal: {
       moreTitle: "➕ 랭킹 더보기 (Top 6~10+ 추가 인기 서비스)",
-      moreNotice: "선택 시 준비된 결과가 아닌, 생성 AI가 실시간 딥 리서치 마크다운 명세서 생성을 시작합니다.",
+      moreNotice: "선택하면 입력한 조건과 카탈로그의 실제 단가로 모델 조합·월 비용·호스팅 옵션을 계산해 명세서 초안을 만듭니다. 규칙 기반 계산이며 생성 AI 를 쓰지 않습니다.",
       rankSuffix: "위",
-      liveGenerate: "실시간 생성",
+      liveGenerate: "내 조건으로 계산",
       scMedTitle: "의료 & 헬스케어 임상 데이터 질의응답 챗봇",
       scMedDesc: "HIPAA 보안 준수 및 의학 논문/임상 데이터베이스 전용 보안 RAG",
       scFinTitle: "금융 & 주식 시장 실시간 감성 분석 API",
@@ -699,7 +699,7 @@ export const translations: Record<Language, TranslationDictionary> = {
       concurrency: "Concurrency"
     },
     researchProgress: {
-      title: "AI Solutions Architect Live Deep Analysis",
+      title: "Calculating an architecture for your inputs",
       subtitle: "Calculating optimal LLM combos and OpEx hosting costs based on your requirements...",
       step1: "Analyzing Natural Language Requirements & Workload Specifications",
       step2: "Scanning 50+ Global LLM Model Database & Arena Elo Benchmarks",
@@ -832,9 +832,9 @@ export const translations: Record<Language, TranslationDictionary> = {
     },
     advisorModal: {
       moreTitle: "➕ More rankings (Top 6–10+ popular services)",
-      moreNotice: "Selecting one starts a live deep-research Markdown spec generation instead of showing a pre-computed result.",
+      moreNotice: "Selecting one calculates model combos, monthly cost and hosting options from your inputs and real catalog prices, and drafts a spec. It is rule-based and does not use generative AI.",
       rankSuffix: "",
-      liveGenerate: "Generate live",
+      liveGenerate: "Calculate for my inputs",
       scMedTitle: "Healthcare clinical-data Q&A chatbot",
       scMedDesc: "HIPAA-compliant secure RAG over medical papers and clinical databases",
       scFinTitle: "Finance & stock market real-time sentiment API",
@@ -1028,7 +1028,7 @@ export const translations: Record<Language, TranslationDictionary> = {
       concurrency: "同時実行数"
     },
     researchProgress: {
-      title: "AIソリューションアーキテクトリアルタイム深層分析中",
+      title: "入力条件でアーキテクチャを計算中",
       subtitle: "ご要件に基づき最適LLM構成とOpExホスティングコストを算出しています...",
       step1: "自然言語要件およびワークロードスペックの分析 (Intent & SLA)",
       step2: "50+ グローバルLLMモデルDB & Arena Eloベンチマークのスキャン",
@@ -1161,9 +1161,9 @@ export const translations: Record<Language, TranslationDictionary> = {
     },
     advisorModal: {
       moreTitle: "➕ ランキングをもっと見る (Top 6〜10+ の人気サービス)",
-      moreNotice: "選択すると、事前計算結果ではなく生成AIによるリアルタイムのディープリサーチ仕様書生成が始まります。",
+      moreNotice: "選択すると、入力条件とカタログの実際の料金からモデル構成・月額コスト・ホスティング候補を計算し、仕様書の下書きを作成します。ルールベースの計算で、生成AIは使いません。",
       rankSuffix: "位",
-      liveGenerate: "リアルタイム生成",
+      liveGenerate: "条件で計算",
       scMedTitle: "医療・ヘルスケア臨床データQ&Aチャットボット",
       scMedDesc: "HIPAA準拠のセキュアRAG（医学論文・臨床データベース対象）",
       scFinTitle: "金融・株式市場のリアルタイム感情分析API",
@@ -1357,7 +1357,7 @@ export const translations: Record<Language, TranslationDictionary> = {
       concurrency: "并发限制"
     },
     researchProgress: {
-      title: "AI 解决方案架构师实时深度分析中",
+      title: "正在按输入条件计算架构",
       subtitle: "正在根据您的需求计算最佳 LLM 组合与 OpEx 托管成本...",
       step1: "分析自然语言需求与工作负载 S specifications (Intent & SLA)",
       step2: "扫描 50+ 全球 LLM 模型数据库及 Arena Elo 跑分",
@@ -1490,9 +1490,9 @@ export const translations: Record<Language, TranslationDictionary> = {
     },
     advisorModal: {
       moreTitle: "➕ 查看更多排名（第 6~10+ 名热门服务）",
-      moreNotice: "选择后将启动生成式 AI 的实时深度研究规范生成，而非展示预先计算的结果。",
+      moreNotice: "选择后将依据输入条件和目录中的实际价格计算模型组合、月度费用与托管选项，并生成说明书草稿。基于规则计算，不使用生成式 AI。",
       rankSuffix: "名",
-      liveGenerate: "实时生成",
+      liveGenerate: "按我的条件计算",
       scMedTitle: "医疗健康临床数据问答机器人",
       scMedDesc: "符合 HIPAA 的安全 RAG，覆盖医学论文与临床数据库",
       scFinTitle: "金融与股市实时情绪分析 API",
@@ -1676,7 +1676,7 @@ export const translations: Record<Language, TranslationDictionary> = {
     viewMode: { grid: "Cuadrícula", table: "Tabla", compact: "Compacto" },
     quota: { title: "Límites de Tarifa", rpm: "RPM", tpm: "TPM", rpd: "RPD", concurrency: "Concurrencia" },
     researchProgress: {
-      title: "Análisis Profundo en Vivo del Arquitecto AI",
+      title: "Calculando una arquitectura con tus datos",
       subtitle: "Calculando la combinación óptima de LLM y costes OpEx de alojamiento...",
       step1: "Analizando requisitos en lenguaje natural y especificaciones (Intent & SLA)",
       step2: "Escaneando base de datos de 50+ modelos LLM y benchmarks Arena Elo",
@@ -1809,9 +1809,9 @@ export const translations: Record<Language, TranslationDictionary> = {
     },
     advisorModal: {
       moreTitle: "➕ Ver más del ranking (Top 6-10+ servicios populares)",
-      moreNotice: "Al seleccionar uno se inicia la generación en vivo de una especificación Markdown, en lugar de mostrar un resultado precalculado.",
+      moreNotice: "Al seleccionar uno se calculan combinaciones de modelos, coste mensual y opciones de alojamiento con tus datos y los precios reales del catálogo, y se redacta una especificación. Se basa en reglas y no usa IA generativa.",
       rankSuffix: ".º",
-      liveGenerate: "Generar en vivo",
+      liveGenerate: "Calcular con mis datos",
       scMedTitle: "Chatbot de preguntas sobre datos clínicos",
       scMedDesc: "RAG seguro conforme a HIPAA sobre artículos médicos y bases de datos clínicas",
       scFinTitle: "API de análisis de sentimiento en tiempo real para finanzas y bolsa",
@@ -1995,7 +1995,7 @@ export const translations: Record<Language, TranslationDictionary> = {
     viewMode: { grid: "Raster", table: "Tabelle", compact: "Kompakt" },
     quota: { title: "Ratenlimits", rpm: "RPM", tpm: "TPM", rpd: "RPD", concurrency: "Nebenläufigkeit" },
     researchProgress: {
-      title: "AI Solution Architect Live-Tiefenanalyse",
+      title: "Architektur wird aus Ihren Angaben berechnet",
       subtitle: "Berechnung der optimalen LLM-Kombinationen und OpEx-Hosting-Kosten...",
       step1: "Analyse der Anforderungsspezifikationen in natürlicher Sprache (Intent & SLA)",
       step2: "Scannen von 50+ globalen LLM-Datenbanken & Arena Elo Benchmarks",
@@ -2128,9 +2128,9 @@ export const translations: Record<Language, TranslationDictionary> = {
     },
     advisorModal: {
       moreTitle: "➕ Mehr Rankings (Top 6–10+ beliebte Dienste)",
-      moreNotice: "Bei Auswahl startet eine Live-Deep-Research-Generierung der Markdown-Spezifikation statt eines vorberechneten Ergebnisses.",
+      moreNotice: "Bei Auswahl werden Modellkombinationen, Monatskosten und Hosting-Optionen aus Ihren Angaben und echten Katalogpreisen berechnet und ein Spezifikationsentwurf erstellt. Regelbasiert, ohne generative KI.",
       rankSuffix: ".",
-      liveGenerate: "Live generieren",
+      liveGenerate: "Mit meinen Angaben berechnen",
       scMedTitle: "Q&A-Chatbot für klinische Gesundheitsdaten",
       scMedDesc: "HIPAA-konformes sicheres RAG über medizinische Publikationen und klinische Datenbanken",
       scFinTitle: "Echtzeit-Sentiment-API für Finanzen und Aktienmarkt",
@@ -2314,7 +2314,7 @@ export const translations: Record<Language, TranslationDictionary> = {
     viewMode: { grid: "Grille", table: "Tableau", compact: "Compact" },
     quota: { title: "Limites de Débit", rpm: "RPM", tpm: "TPM", rpd: "RPD", concurrency: "Concurrence" },
     researchProgress: {
-      title: "Analyse Approfondie en Direct par l'Architecte IA",
+      title: "Calcul d’une architecture à partir de vos données",
       subtitle: "Calcul des combinaisons LLM optimales et des coûts d'hébergement OpEx...",
       step1: "Analyse des exigences en langage naturel et des spécifications (Intent & SLA)",
       step2: "Balayage de la base de données de 50+ modèles LLM et benchmarks Arena Elo",
@@ -2447,9 +2447,9 @@ export const translations: Record<Language, TranslationDictionary> = {
     },
     advisorModal: {
       moreTitle: "➕ Voir plus du classement (Top 6 à 10+ services populaires)",
-      moreNotice: "La sélection lance une génération en direct de la spécification Markdown au lieu d’afficher un résultat précalculé.",
+      moreNotice: "La sélection calcule les combinaisons de modèles, le coût mensuel et les options d’hébergement à partir de vos données et des prix réels du catalogue, puis rédige une spécification. Calcul à base de règles, sans IA générative.",
       rankSuffix: "e",
-      liveGenerate: "Générer en direct",
+      liveGenerate: "Calculer avec mes données",
       scMedTitle: "Chatbot de questions-réponses sur les données cliniques",
       scMedDesc: "RAG sécurisé conforme HIPAA sur les publications médicales et bases cliniques",
       scFinTitle: "API d’analyse de sentiment en temps réel pour la finance et la bourse",

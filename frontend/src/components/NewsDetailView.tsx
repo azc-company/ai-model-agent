@@ -709,6 +709,8 @@ export function NewsDetailView({ article, t, onBack }: NewsDetailViewProps) {
               <img 
                 src={article.image_url} 
                 alt={article.title} 
+                decoding="async"
+                referrerPolicy="no-referrer"
                 onError={() => setImgError(true)}
                 className="w-full h-full object-cover"
               />

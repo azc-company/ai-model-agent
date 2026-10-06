@@ -431,6 +431,20 @@ export default function NewsPulseView() {
   // 최근 업데이트 노트. 없으면 배너를 그리지 않는다 — 빈 배너는 정확히 반대 인상을 준다.
   const [latestUpdate, setLatestUpdate] = useState<ChangelogEntry | null>(null);
   const [selectedArticle, setSelectedArticle] = useState<NewsArticle | null>(null);
+  // 목록 API 는 본문을 싣지 않는다(예전엔 421건 본문까지 실어 압축 1MB). 기사를 열 때 본문을 받는다.
+  const [fullArticle, setFullArticle] = useState<NewsArticle | null>(null);
+  useEffect(() => {
+    if (!selectedArticle) { setFullArticle(null); return; }
+    if (selectedArticle.blog_summary !== undefined) { setFullArticle(selectedArticle); return; }
+    let alive = true;
+    setFullArticle(null);
+    fetch(`${API_BASE_URL}/news/articles/${encodeURIComponent(selectedArticle.id)}`)
+      .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
+      .then((full) => { if (alive) setFullArticle({ ...selectedArticle, ...full }); })
+      // 본문을 못 받아도 목록 정보(요약·팁)로 상세를 연다. NewsDetailView 가 그 경우를 그린다.
+      .catch(() => { if (alive) setFullArticle(selectedArticle); });
+    return () => { alive = false; };
+  }, [selectedArticle]);
 
   // 서브 렌즈 탭 클릭 시 주소창 URL 자동 동기화 (북마크/즐겨찾기/공유 가능)
   const setActiveLens = (lens: string) => {
@@ -573,11 +587,11 @@ export default function NewsPulseView() {
         const sourceMatch = article.source_name.toLowerCase().includes(q);
         const tagMatch = article.tags?.some(tag => tag.toLowerCase().includes(q));
         const summaryMatch = article.summary_bullets?.some(b => b.toLowerCase().includes(q));
-        const blogMatch = article.blog_summary?.toLowerCase().includes(q);
         const insightMatch = article.actionable_insight 
           ? Object.values(article.actionable_insight).some(v => v && v.toLowerCase().includes(q))
           : false;
-        return titleMatch || sourceMatch || tagMatch || summaryMatch || blogMatch || insightMatch;
+        // 본문 검색은 하지 않는다 — 목록에 본문이 없다. 제목·요약·태그·팁으로 찾는다.
+        return titleMatch || sourceMatch || tagMatch || summaryMatch || insightMatch;
       });
     }
 
@@ -637,9 +651,16 @@ export default function NewsPulseView() {
 
   // 기사 클릭 시 독립 블로그 상세 페이지로 화면 전환 이동
   if (selectedArticle) {
+    if (!fullArticle) {
+      return (
+        <div className="flex items-center justify-center min-h-[40vh]" role="status" aria-label="loading">
+          <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-cyan-500"></div>
+        </div>
+      );
+    }
     return (
       <NewsDetailView 
-        article={selectedArticle} 
+        article={fullArticle} 
         t={t} 
         onBack={handleBackFromDetail} 
       />
@@ -773,9 +794,14 @@ export default function NewsPulseView() {
                   {/* Thumbnail Image */}
                   {article.image_url && (
                     <div className="w-full md:w-48 h-36 sm:h-40 rounded-xl overflow-hidden shrink-0 bg-slate-900 border border-slate-200 dark:border-slate-700/80 shadow-inner relative">
+                      {/* 목록 이미지는 화면에 들어올 때 받는다. 예전엔 80장을 한꺼번에 요청했다(지연 로딩 0개). */}
                       <img
                         src={article.image_url}
                         alt={article.title}
+                        loading="lazy"
+                        decoding="async"
+                        // 원 언론사 이미지를 직접 쓴다. 리퍼러를 보내지 않아야 핫링크 차단에 덜 걸린다.
+                        referrerPolicy="no-referrer"
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         onError={(e) => {
                           // 래퍼까지 숨기지 않으면 bg-slate-900 빈 박스가 남는다
