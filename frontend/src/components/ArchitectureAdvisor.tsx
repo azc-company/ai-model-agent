@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Sparkles, Code, Database, Headset, Globe, Cpu, Check, Copy, Download, 
   Zap, CheckCircle2, ChevronRight, Layers, X, Loader2
@@ -7,114 +7,9 @@ import type { RecommendationRequest, ArchitectureRecommendationResult, TrendingT
 import { API_BASE_URL } from '../api';
 import { useLanguage } from '../context/LanguageContext';
 
-const INITIAL_SAMPLE_RESULT: ArchitectureRecommendationResult = {
-  service_name: "sampleServiceName",
-  monthly_requests: 100000,
-  total_monthly_input_tokens_m: 200.0,
-  total_monthly_output_tokens_m: 100.0,
-  combos: [
-    {
-      id: "smart_balanced",
-      name: "smartRouterName",
-      tag: "RECOMMENDED",
-      description: "smartRouterDesc",
-      items: [
-        {
-          role: "Router & Classifier (70% traffic)",
-          model_id: "groq-llama-3.3-70b",
-          model_name: "Llama 3.3 70B (Groq LPU)",
-          provider_name: "Groq",
-          allocation_percent: 70.0,
-          monthly_estimated_cost: 82.60
-        },
-        {
-          role: "Primary Reasoning Engine (30% traffic)",
-          model_id: "deepseek-r1",
-          model_name: "DeepSeek R1 (Reasoning)",
-          provider_name: "DeepSeek",
-          allocation_percent: 30.0,
-          monthly_estimated_cost: 65.70
-        }
-      ],
-      total_monthly_cost: 148.30,
-      avg_arena_elo: 1358,
-      key_advantages: ["advCost60", "advP95", "advCircuit"]
-    },
-    {
-      id: "best_quality",
-      name: "bestName",
-      tag: "FRONTIER",
-      description: "bestDesc",
-      items: [
-        {
-          role: "Frontier Single Engine (100% traffic)",
-          model_id: "claude-3-5-sonnet",
-          model_name: "Claude 3.5 Sonnet",
-          provider_name: "Anthropic",
-          allocation_percent: 100.0,
-          monthly_estimated_cost: 2100.00
-        }
-      ],
-      total_monthly_cost: 2100.00,
-      avg_arena_elo: 1365,
-      key_advantages: ["advTopReason", "advSimple", "advElo"]
-    },
-    {
-      id: "ultra_budget",
-      name: "budgetName",
-      tag: "BUDGET",
-      description: "budgetDesc",
-      items: [
-        {
-          role: "Open-Weight Engine (100% traffic)",
-          model_id: "deepseek-v3",
-          model_name: "DeepSeek V3",
-          provider_name: "DeepSeek",
-          allocation_percent: 100.0,
-          monthly_estimated_cost: 41.40
-        }
-      ],
-      total_monthly_cost: 41.40,
-      avg_arena_elo: 1320,
-      key_advantages: ["advExtremeSave", "advHighVolume", "advOpenFlex"]
-    }
-  ],
-  hosting_options: [
-    {
-      provider: "Vercel + Render.com (Serverless & PaaS)",
-      category: "Serverless PaaS",
-      estimated_monthly_cost: 20.0,
-      description: "프론트엔드는 Vercel CDN, 백엔드는 Render.com Python PaaS에 자동 배포. 100% 무료 시작 가능.",
-      recommended_for: "초기 스타트업, MVP 검증 및 빠른 프로덕션 배포"
-    },
-    {
-      provider: "AWS ECS Fargate + Amazon Bedrock",
-      category: "Cloud Native (Enterprise)",
-      estimated_monthly_cost: 80.0,
-      description: "보안 및 프라이빗 VPC 내에 백엔드 컨테이너 구축. 엔터프라이즈 IAM 권한 및 오토스케일링 적용.",
-      recommended_for: "보안 규정이 엄격한 기업 및 대규모 프로덕션"
-    },
-    {
-      provider: "RunPod / Modal GPU Instance (Self-Hosted)",
-      category: "GPU Serverless / Self-Hosted",
-      estimated_monthly_cost: 120.0,
-      description: "Llama/Qwen 등 오픈웨이트 모델을 독립 GPU(NVIDIA A10G/L40S) 서버리스로 직접 서빙.",
-      recommended_for: "자체 데이터 보안 및 오픈웨이트 직접 파인튜닝 서비스"
-    }
-  ],
-  markdown_spec: `# 🚀 자율 코딩 에이전트 서비스 AI 시스템 개발 명세서 (Sample)\n\n## 1. Executive Summary\n본 아키텍처는 월 100,000건의 자율 코딩 요구사항을 처리하기 위한 최적의 2-Tier 라우터 구조입니다.\n`,
-  spec_bundle: {
-    agents_md: `# 🤖 [AGENTS.md] AI Coding Agent Directive & Execution Rules\n\n> **Target Agent**: Cursor IDE, Claude Code, GitHub Copilot Workspace, Devin\n> **Service**: 자율 코딩 에이전트 서비스 (CODE_AGENT)\n\n---\n\n## 1. 📌 Primary Directives & Architecture Pattern\n- **Routing Pattern**: Smart 2-Tier Multi-Model Routing (Llama 3.3 70B (Groq LPU) + DeepSeek R1 (Reasoning))\n- **Circuit Breaker**: Implement automatic fallback to secondary model on timeout (>15s) or HTTP 5xx.\n- **Async Non-Blocking**: All I/O operations MUST use \`async/await\` with \`httpx.AsyncClient\`.\n\n## 2. 🛡️ Coding Guidelines & Safety Rules\n1. **No Superfluous Dependencies**: Use standard library or \`fastapi\`, \`httpx\`, \`pydantic\`, \`python-dotenv\`.\n2. **Type Hinting**: All functions MUST have PEP 484 type annotations and Google-style docstrings.\n3. **Guardrails**: Validate input prompts for length (<500 chars) and sanitization before calling LLM APIs.\n4. **Environment Variables**: Load secrets exclusively via \`.env\` (Never hardcode API keys).\n`,
-    architecture_md: `# 🏗️ [ARCHITECTURE.md] System Design & Flow Specifications\n\n> **System**: 자율 코딩 에이전트 서비스\n> **Target SLA**: Latency P95 < 400ms (Simple) / < 2.5s (Complex), Availability 99.9%\n\n---\n\n## 1. Sequence Diagram (Request Flow)\n\n\`\`\`mermaid\nsequenceDiagram\n    autonumber\n    actor Client as 👤 Client / Frontend\n    participant GW as 🌐 API Gateway (FastAPI)\n    participant Router as ⚡ Router (Groq LPU)\n    participant Primary as 🧠 Primary (DeepSeek R1)\n    participant Fallback as 🛡️ Fallback Backup\n\n    Client->>GW: POST /api/v1/generate\n    GW->>Router: Classify Query Complexity (Simple vs Complex)\n    alt Simple Query (70% traffic)\n        Router-->>GW: Direct Fast Response\n    else Complex Query (30% traffic)\n        GW->>Primary: Execute Reasoning Inference\n        alt Primary Success\n            Primary-->>GW: High Quality Result\n        else Primary Timeout / Failure\n            GW->>Fallback: Route to Backup Engine\n            Fallback-->>GW: Fallback Result\n        end\n    end\n    GW-->>Client: 200 OK (Response)\n\`\`\`\n`,
-    database_schema_md: `# 🗄️ [DATABASE_SCHEMA.md] Database ERD & DDL Specification\n\n> **Target DB**: PostgreSQL / MariaDB + Redis Cache\n> **Domain**: 자율 코딩 에이전트 서비스 (CODE_AGENT)\n\n---\n\n## 1. Entity Relationship Diagram (Mermaid ERD)\n\n\`\`\`mermaid\nerDiagram\n    USERS ||--o{ REQUEST_LOGS : "executes"\n    USERS ||--o{ API_KEYS : "owns"\n    REQUEST_LOGS }|--|| MODEL_ROUTING_EVENTS : "triggers"\n\`\`\`\n\n## 2. PostgreSQL DDL Schemas\n\`\`\`sql\nCREATE TABLE users (id UUID PRIMARY KEY, email VARCHAR(255) UNIQUE);\nCREATE TABLE request_logs (id UUID PRIMARY KEY, latency_ms NUMERIC(8,2));\n\`\`\`\n`,
-    tasks_md: `# 📝 [TASKS.md] Step-by-Step Agent Implementation Checklist\n\nExecute the following tasks sequentially. Check off items as they pass automated verification.\n\n---\n\n### Phase 1: Environment & Guardrails Setup\n- [ ] **Task 1.1**: Create \`requirements.txt\` with \`fastapi\`, \`uvicorn\`, \`httpx\`, \`pydantic\`, \`python-dotenv\`.\n- [ ] **Task 1.2**: Create \`.env.example\` with API keys template (\`GROQ_API_KEY\`, \`OPENAI_API_KEY\`, \`DEEPSEEK_API_KEY\`).\n- [ ] **Task 1.3**: Implement \`app/guardrails.py\` for Prompt Injection & Off-Topic regex filtering.\n\n### Phase 2: Multi-Model Router Pipeline Implementation\n- [ ] **Task 2.1**: Build \`GenerateRequest\` and \`GenerateResponse\` Pydantic schemas.\n- [ ] **Task 2.2**: Implement \`ProductionAIRouter\` class with Async HTTP Client and Circuit Breaker pattern.\n- [ ] **Task 2.3**: Wire primary model (\`DeepSeek R1\`) and router model (\`Groq LPU\`) fallback routes.\n\n### Phase 3: Verification & Deployment\n- [ ] **Task 3.1**: Write FastAPI \`/api/v1/generate\` POST endpoint in \`app/main.py\`.\n- [ ] **Task 3.2**: Create production \`Dockerfile\` and \`docker-compose.yml\`.\n- [ ] **Task 3.3**: Run \`pytest\` or curl verification script to ensure < 400ms latency on simple queries.\n`,
-    deployment_md: `# 🐳 [DEPLOYMENT.md] Infrastructure & Deployment Specification\n\n> **Hosting**: Vercel + Render.com (Serverless & PaaS)\n> **Est. Monthly OpEx**: $20.00/mo\n\n---\n\n## 1. Environment Variables (\`.env.example\`)\n\`\`\`env\nPORT=8080\nENV=production\nGROQ_API_KEY=gsk_your_groq_api_key\nDEEPSEEK_API_KEY=sk_your_deepseek_api_key\nOPENAI_API_KEY=sk-proj-your_openai_api_key\n\`\`\`\n\n## 2. Production Dockerfile\n\`\`\`dockerfile\nFROM python:3.11-slim\nWORKDIR /app\nCOPY requirements.txt .\nRUN pip install --no-cache-dir -r requirements.txt\nCOPY . .\nEXPOSE 8080\nCMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]\n\`\`\`\n`
-  }
-};
-
 export const ArchitectureAdvisor: React.FC = () => {
   const { language, t: g } = useLanguage();
-  // 모듈 상수(SERVICE_TEMPLATES, INITIAL_SAMPLE_RESULT)는 사전 키를 담는다.
+  // 모듈 상수(SERVICE_TEMPLATES)는 사전 키를 담는다.
   const L = (v?: string) => (v && (g.advisorModal as any)[v]) || v || '';
 
   const I18N_ADVISOR: Record<string, any> = {
@@ -420,7 +315,9 @@ export const ArchitectureAdvisor: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [researchProgress, setResearchProgress] = useState<number>(0);
   const [researchStep, setResearchStep] = useState<number>(0);
-  const [result, setResult] = useState<ArchitectureRecommendationResult | null>(INITIAL_SAMPLE_RESULT);
+  // 예전에는 코드에 박아 둔 샘플 결과(Llama 3.3 70B·DeepSeek R1 등 구세대 조합)를 먼저 보여줬다.
+  // 처음 열 때 기본 조건으로 실제 추천을 받는다(아래 useEffect).
+  const [result, setResult] = useState<ArchitectureRecommendationResult | null>(null);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>('code_agent');
 
   const [showSpecBundleModal, setShowSpecBundleModal] = useState<boolean>(false);
@@ -570,6 +467,19 @@ export const ArchitectureAdvisor: React.FC = () => {
         console.error("Failed to fetch recommendation", err);
         setLoading(false);
       });
+  };
+
+  useEffect(() => {
+    fetchRecommendation();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const openModel = (id: string) => {
+    const url = new URL(window.location.origin);
+    url.searchParams.set('tab', 'dashboard');
+    url.searchParams.set('model', id);
+    window.history.pushState({}, '', url.toString());
+    window.dispatchEvent(new PopStateEvent('popstate'));
   };
 
   const getTemplateIcon = (iconName: string) => {
@@ -780,7 +690,7 @@ export const ArchitectureAdvisor: React.FC = () => {
                   <div 
                     key={combo.id}
                     className={`p-5 rounded-2xl border transition-all flex flex-col justify-between space-y-4 ${
-                      combo.tag === 'RECOMMENDED'
+                      combo.tag.toUpperCase() === 'RECOMMENDED'
                         ? 'bg-gradient-to-br from-indigo-900/90 via-slate-900 to-purple-950 text-white border-indigo-500/50 shadow-xl ring-2 ring-indigo-500/40'
                         : 'bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-800'
                     }`}
@@ -788,8 +698,8 @@ export const ArchitectureAdvisor: React.FC = () => {
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
                         <span className={`text-2xs font-black px-2.5 py-0.5 rounded-full uppercase ${
-                          combo.tag === 'RECOMMENDED' ? 'bg-indigo-500 text-white' :
-                          combo.tag === 'FRONTIER' ? 'bg-purple-700 text-white' : 'bg-emerald-700 text-white'
+                          combo.tag.toUpperCase() === 'RECOMMENDED' ? 'bg-indigo-500 text-white' :
+                          combo.tag.toUpperCase().startsWith('FRONTIER') ? 'bg-purple-700 text-white' : 'bg-emerald-700 text-white'
                         }`}>
                           {combo.tag}
                         </span>
@@ -797,6 +707,24 @@ export const ArchitectureAdvisor: React.FC = () => {
                       <h3 className="font-black text-base leading-tight">{L(combo.name)}</h3>
                       <p className="text-xs leading-relaxed opacity-90">{L(combo.description)}</p>
                     </div>
+
+                    {/* 추천 모델. 예전 카드는 비용만 있고 어떤 모델인지 명세서를 열어야 알 수 있었다. */}
+                    <ul className="space-y-1.5">
+                      {combo.items.map((it) => (
+                        <li key={it.role} className="text-xs flex items-baseline justify-between gap-2">
+                          <span className="min-w-0">
+                            <span className="opacity-70 font-bold">{L(it.role)}</span>{' '}
+                            <button onClick={() => openModel(it.model_id)}
+                              className="focus-ring font-black underline-offset-4 hover:underline text-left">
+                              {it.model_name.replace(/^[^:]+:\s*/, '')}
+                            </button>
+                          </span>
+                          <span className="shrink-0 font-mono opacity-80">
+                            {it.score != null && <>LMArena {it.score} · </>}{it.allocation_percent}%
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
 
                     <div className="pt-3 border-t border-slate-700/40 space-y-2">
                       <div className="flex justify-between items-center text-xs font-bold">

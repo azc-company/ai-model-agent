@@ -31,7 +31,16 @@ import urllib.request
 import zipfile
 
 ARENA_URL = "https://huggingface.co/datasets/lmarena-ai/leaderboard-dataset/resolve/main/text/latest-00000-of-00001.parquet"
+ARENA_VISION_URL = "https://huggingface.co/datasets/lmarena-ai/leaderboard-dataset/resolve/main/vision/latest-00000-of-00001.parquet"
 EPOCH_URL = "https://epoch.ai/data/benchmark_data.zip"
+
+# 아키텍처 추천기가 용도별로 고르는 근거. 종합 점수 하나로는 코딩·RAG·콘텐츠·멀티모달이
+# 모두 같은 모델로 나왔다(2026-10-06 실측). 같은 데이터셋에 분야별 순위가 29종 있다.
+#   coding           코딩 에이전트          longer_query     RAG(긴 입력)
+#   creative_writing 콘텐츠 생성           multi_turn       일반 챗봇
+#   언어별            번역·다국어 (UI 7개 언어)
+ARENA_CATEGORIES = ("coding", "longer_query", "creative_writing", "multi_turn",
+                    "korean", "japanese", "chinese", "german", "spanish", "french")
 OUT = "seed_benchmarks.sql"
 
 # 수집이 부분 실패했을 때 멀쩡한 값을 null 로 덮지 않기 위한 하한. 실측: 아레나 401, GPQA 313.
@@ -94,11 +103,32 @@ def fetch(url, timeout=120):
         return r.read()
 
 
-def arena_rows(raw=None):
+def _arena_table(raw):
     import pyarrow.parquet as pq   # CI 에서 pip install pyarrow
-    table = pq.read_table(io.BytesIO(raw if raw is not None else fetch(ARENA_URL))).to_pylist()
+    return pq.read_table(io.BytesIO(raw)).to_pylist()
+
+
+def _rows(table, category):
     return [(r["model_name"], round(float(r["rating"])), str(r["leaderboard_publish_date"])[:10])
-            for r in table if r.get("category") == "overall" and r.get("rating") is not None]
+            for r in table if r.get("category") == category and r.get("rating") is not None]
+
+
+def arena_rows(raw=None, category="overall"):
+    return _rows(_arena_table(raw if raw is not None else fetch(ARENA_URL)), category)
+
+
+def arena_category_rows(raw):
+    """{분야: [(이름, 점수, 기준일)]}. 텍스트 데이터셋 한 번 읽어 분야별로 나눈다."""
+    table = _arena_table(raw)
+    return {c: _rows(table, c) for c in ARENA_CATEGORIES}
+
+
+def vision_rows(raw=None):
+    """비전 아레나 종합. 받지 못하면 빈 목록 — 비전 점수만 비고 나머지 갱신은 진행한다."""
+    try:
+        return _rows(_arena_table(raw if raw is not None else fetch(ARENA_VISION_URL)), "overall")
+    except Exception:
+        return []
 
 
 def gpqa_rows(raw=None):
@@ -131,8 +161,10 @@ def load_catalog(runner=subprocess.run, attempts=3):
     raise RuntimeError(f"카탈로그 조회 실패: {last}")
 
 
-def build(catalog, arena, gpqa):
+def build(catalog, arena, gpqa, categories=None, vision=None):
     a_idx, g_idx = index(arena), index(gpqa)
+    c_idx = {c: index(rows) for c, rows in (categories or {}).items() if rows}
+    v_idx = index(vision) if vision else None
     arena_asof = max((d for _, _, d in arena), default=None)
     statements, report = [], {"arena": 0, "gpqa": 0, "total": len(catalog), "matches": []}
     for m in catalog:
@@ -145,6 +177,13 @@ def build(catalog, arena, gpqa):
             "swe_bench": None,
             "asof": {"arena": arena_asof if a else None, "gpqa": g[2] if g else None},
         }
+        # 분야별·비전 점수. 매칭된 분야만 싣는다(없는 분야는 키가 없다 = 근거 없음).
+        cats = {c: hit[0] for c, idx in c_idx.items() if (hit := match(m, idx))}
+        if cats:
+            bench["arena_cat"] = cats
+        v = match(m, v_idx) if v_idx else None
+        if v:
+            bench["arena_vision"] = v[0]
         report["arena"] += bool(a)
         report["gpqa"] += bool(g)
         if a or g:
@@ -160,8 +199,11 @@ def main():
     ap.add_argument("--out", default=OUT)
     args = ap.parse_args()
 
-    arena, gpqa = arena_rows(), gpqa_rows()
-    print(f"📥 Arena {len(arena)}행 · GPQA {len(gpqa)}행")
+    arena_raw = fetch(ARENA_URL)
+    arena, gpqa = arena_rows(arena_raw), gpqa_rows()
+    categories, vision = arena_category_rows(arena_raw), vision_rows()
+    print(f"📥 Arena {len(arena)}행 · GPQA {len(gpqa)}행 · 비전 {len(vision)}행 · "
+          + " ".join(f"{c}={len(r)}" for c, r in categories.items()))
     if len(arena) < MIN_ARENA_ROWS or len(gpqa) < MIN_GPQA_ROWS:
         # 수집이 부분 실패하면 매칭 0 이 되어 전 모델 값을 null 로 덮는다. 아무것도 하지 않는다.
         print(f"❌ 수집량이 하한 미달 (Arena ≥{MIN_ARENA_ROWS}, GPQA ≥{MIN_GPQA_ROWS}). 갱신하지 않는다.")
@@ -169,7 +211,7 @@ def main():
         return 1
 
     catalog = load_catalog()
-    statements, rep = build(catalog, arena, gpqa)
+    statements, rep = build(catalog, arena, gpqa, categories, vision)
     print(f"🔗 카탈로그 {rep['total']}개 → Arena 매칭 {rep['arena']} · GPQA 매칭 {rep['gpqa']}")
     if args.report:
         for name, a, g in sorted(rep["matches"]):

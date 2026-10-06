@@ -146,6 +146,7 @@ export interface ModelComboItem {
   provider_name: string;
   allocation_percent: number;
   monthly_estimated_cost: number;
+  score?: number;   // 선택 근거가 된 LMArena 분야 점수
 }
 
 export interface ModelCombo {

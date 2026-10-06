@@ -1,3 +1,5 @@
+import json
+import re
 import importlib.util
 import sys
 import unittest
@@ -50,6 +52,21 @@ class BuildTest(unittest.TestCase):
         self.assertIn('"mmlu_pro": null', stmts[0])
         self.assertIn('"swe_bench": null', stmts[0])
         self.assertIn('"arena_elo": null', stmts[1])     # 시드 값을 남기지 않는다
+
+    def test_category_and_vision_scores_are_stored_when_matched(self):
+        # 추천기가 용도별로 고르는 근거. 종합 점수 하나로는 모든 용도가 같은 모델로 나왔다.
+        catalog = [{"id": "x-ai-grok-4.7", "name": "xAI: Grok 4.7"}, {"id": "other", "name": "Other"}]
+        stmts, _ = sync.build(
+            catalog, [("grok-4.7", 1400, "2026-10-01")], [],
+            categories={"coding": [("grok-4.7-high", 1450, "2026-10-01")], "korean": []},
+            vision=[("grok-4.7", 1250, "2026-10-01")],
+        )
+        grok = json.loads(re.search(r"benchmarks = '(.*?)' WHERE id = 'x-ai-grok-4.7'", stmts[0]).group(1))
+        self.assertEqual(grok["arena_cat"], {"coding": 1450})      # 비어 있는 분야는 키 자체가 없다
+        self.assertEqual(grok["arena_vision"], 1250)
+        other = json.loads(re.search(r"benchmarks = '(.*?)' WHERE id = 'other'", stmts[1]).group(1))
+        self.assertNotIn("arena_cat", other)
+        self.assertNotIn("arena_vision", other)
 
     def test_gpqa_is_converted_to_percent(self):
         import io, zipfile
