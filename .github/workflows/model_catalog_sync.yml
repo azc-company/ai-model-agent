@@ -2,14 +2,29 @@ name: 🤖 Weekly LLM Model Catalog D1 Sync
 
 on:
   schedule:
-    # 매주 월요일 한국시간 오전 06:00 (UTC 일요일 21:00)에 자동 실행
+    # 전체 동기화: 매주 월요일 한국시간 06:00 (UTC 일요일 21:00)
+    #   모델 + 벤치마크 + 프로바이더 비교 + 변경 리포트 + 스냅샷
     - cron: '0 21 * * 0'
-  workflow_dispatch: # GitHub 웹 콘솔에서 수동 실행 가능
+    # 모델 목록만: 화~일 한국시간 06:30 (UTC 월~토 21:30)
+    #   주 1회로는 새 모델이 최대 7일 늦게 보였다(gemini-nano-banana-2.1 은 10/6 출시,
+    #   다음 반영이 10/11). 모델 upsert 는 2분이면 끝나고 비용이 들지 않는다.
+    - cron: '30 21 * * 1-6'
+  workflow_dispatch:
+    inputs:
+      full:
+        description: '전체 동기화 (벤치마크·프로바이더·리포트·스냅샷 포함)'
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   model-d1-sync:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      # 주간 스냅샷은 '지난주 대비 변경' 리포트의 기준이다. 매일 찍으면 리포트가 하루치만
+      # 비교하게 되므로 무거운 단계는 주간 회차(또는 수동 full)에서만 돈다.
+      FULL: ${{ github.event.schedule == '0 21 * * 0' || inputs.full == true }}
 
     steps:
       - name: 📦 1. 저장소 체크아웃
@@ -61,6 +76,7 @@ jobs:
       # 둘 다 CC-BY 4.0 — 화면에 출처를 표기해야 한다. 수집량이 하한에 못 미치면 스크립트가
       # 빈 SQL 을 남기고 끝나므로, 수집 실패가 멀쩡한 값을 null 로 덮지 않는다.
       - name: 📊 4.6. 벤치마크 동기화 (LMArena · Epoch AI)
+        if: env.FULL == 'true'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -77,6 +93,7 @@ jobs:
       # 손으로 적은 프로바이더 6줄을 41일째 "실시간"이라고 부르고 있었다.
       # 스크립트가 하한(모델 20개) 미달 시 빈 파일을 남기므로, 수집 실패가 표를 비우지 않는다.
       - name: ⚖️ 4.7. 프로바이더 엔드포인트 동기화 (OpenRouter)
+        if: env.FULL == 'true'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -96,6 +113,7 @@ jobs:
       # 담겨 리포트가 항상 한 주기 늦었다 (2026-09-06 실측: +18 이 어느 스냅샷에도
       # 없었다). 갱신 후에 찍으면 같은 회차 안에서 비교가 끝난다.
       - name: 📋 5. 카탈로그 변경 리포트
+        if: env.FULL == 'true'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -122,6 +140,7 @@ jobs:
 
       # 비교가 끝난 뒤에 찍어야 이번 회차 결과가 다음 회차의 기준이 된다.
       - name: 📸 6. 카탈로그 스냅샷 저장
+        if: env.FULL == 'true'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
