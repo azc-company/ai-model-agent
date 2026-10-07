@@ -209,3 +209,17 @@ CREATE TABLE IF NOT EXISTS batch_runs (
   collected INTEGER,
   saved     INTEGER
 );
+
+-- 비공개 피드백 (src/feedback.ts). 화면에 숫자를 내지 않고 어드민에서만 본다.
+-- 같은 세션이 같은 대상에 다시 누르면 마지막 값으로 바꾼다(연타·조작 방지).
+CREATE TABLE IF NOT EXISTS feedback (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  kind       TEXT NOT NULL,     -- model_error | article_helpful | advisor_helpful
+  target     TEXT NOT NULL,     -- 모델 id | 기사 id | 추천기 분야
+  value      TEXT NOT NULL,
+  note       TEXT,
+  session_id TEXT NOT NULL,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE (kind, target, session_id)
+);
+CREATE INDEX IF NOT EXISTS idx_feedback_kind_time ON feedback(kind, created_at);

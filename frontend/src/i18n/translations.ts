@@ -92,6 +92,30 @@ export interface TranslationDictionary {
     notFound: string;
     tokens: string;
   };
+  feedback: {
+    articleQ: string;
+    advisorQ: string;
+    yes: string;
+    no: string;
+    thanks: string;
+    whyNot: string;
+    reasonCost: string;
+    reasonQuality: string;
+    reasonModels: string;
+    reasonOther: string;
+    reportLink: string;
+    reportTitle: string;
+    fieldPrice: string;
+    fieldContext: string;
+    fieldBenchmark: string;
+    fieldDescription: string;
+    fieldOther: string;
+    notePlaceholder: string;
+    send: string;
+    cancel: string;
+    reportThanks: string;
+    privacy: string;
+  };
   dashboard: {
     familiesFound: string;
     ofModels: string;
@@ -423,6 +447,30 @@ export const translations: Record<Language, TranslationDictionary> = {
       notFound: "모델을 찾을 수 없습니다.",
       tokens: "토큰",
     },
+    feedback: {
+      articleQ: "이 기사가 도움이 됐나요?",
+      advisorQ: "이 추천이 도움이 됐나요?",
+      yes: "도움됐어요",
+      no: "아쉬워요",
+      thanks: "의견 감사합니다. 더 나은 내용을 만드는 데 쓰겠습니다.",
+      whyNot: "어떤 점이 아쉬웠나요?",
+      reasonCost: "비용",
+      reasonQuality: "품질",
+      reasonModels: "추천 모델",
+      reasonOther: "기타",
+      reportLink: "데이터 오류 신고",
+      reportTitle: "어떤 정보가 틀렸나요?",
+      fieldPrice: "가격",
+      fieldContext: "컨텍스트·출력 한도",
+      fieldBenchmark: "벤치마크",
+      fieldDescription: "설명",
+      fieldOther: "기타",
+      notePlaceholder: "올바른 값이나 근거를 적어 주세요 (선택, 300자). 링크는 받지 않습니다.",
+      send: "보내기",
+      cancel: "취소",
+      reportThanks: "신고 감사합니다. 확인 후 반영하겠습니다.",
+      privacy: "개인정보는 받지 않으며 결과는 공개되지 않습니다.",
+    },
     dashboard: {
       familiesFound: "개 모델 계열",
       ofModels: "전체 {m}개 모델",
@@ -751,6 +799,30 @@ export const translations: Record<Language, TranslationDictionary> = {
       alternativesNote: "Same tier, closest output price first.",
       notFound: "Model not found.",
       tokens: "tokens",
+    },
+    feedback: {
+      articleQ: "Was this article helpful?",
+      advisorQ: "Was this recommendation helpful?",
+      yes: "Helpful",
+      no: "Not really",
+      thanks: "Thanks for the feedback. We use it to improve.",
+      whyNot: "What fell short?",
+      reasonCost: "Cost",
+      reasonQuality: "Quality",
+      reasonModels: "Recommended models",
+      reasonOther: "Other",
+      reportLink: "Report a data error",
+      reportTitle: "What is wrong?",
+      fieldPrice: "Price",
+      fieldContext: "Context / output limit",
+      fieldBenchmark: "Benchmark",
+      fieldDescription: "Description",
+      fieldOther: "Other",
+      notePlaceholder: "Tell us the correct value or source (optional, 300 chars). Links are not accepted.",
+      send: "Send",
+      cancel: "Cancel",
+      reportThanks: "Thanks for the report. We will check and fix it.",
+      privacy: "No personal data is collected and results are not public.",
     },
     dashboard: {
       familiesFound: " model families",
@@ -1081,6 +1153,30 @@ export const translations: Record<Language, TranslationDictionary> = {
       notFound: "モデルが見つかりません。",
       tokens: "トークン",
     },
+    feedback: {
+      articleQ: "この記事は役に立ちましたか？",
+      advisorQ: "この推奨は役に立ちましたか？",
+      yes: "役に立った",
+      no: "いまひとつ",
+      thanks: "ご意見ありがとうございます。改善に活用します。",
+      whyNot: "どの点が物足りなかったですか？",
+      reasonCost: "コスト",
+      reasonQuality: "品質",
+      reasonModels: "推奨モデル",
+      reasonOther: "その他",
+      reportLink: "データの誤りを報告",
+      reportTitle: "どの情報が誤っていますか？",
+      fieldPrice: "料金",
+      fieldContext: "コンテキスト・出力上限",
+      fieldBenchmark: "ベンチマーク",
+      fieldDescription: "説明",
+      fieldOther: "その他",
+      notePlaceholder: "正しい値や根拠をご記入ください（任意、300文字）。リンクは受け付けません。",
+      send: "送信",
+      cancel: "キャンセル",
+      reportThanks: "ご報告ありがとうございます。確認のうえ反映します。",
+      privacy: "個人情報は収集せず、結果は公開されません。",
+    },
     dashboard: {
       familiesFound: "件のモデル系列",
       ofModels: "全{m}件のモデル",
@@ -1410,6 +1506,30 @@ export const translations: Record<Language, TranslationDictionary> = {
       notFound: "未找到该模型。",
       tokens: "token",
     },
+    feedback: {
+      articleQ: "这篇文章有帮助吗？",
+      advisorQ: "这个推荐有帮助吗？",
+      yes: "有帮助",
+      no: "不太有用",
+      thanks: "感谢反馈，我们会用于改进。",
+      whyNot: "哪里不够好？",
+      reasonCost: "成本",
+      reasonQuality: "质量",
+      reasonModels: "推荐模型",
+      reasonOther: "其他",
+      reportLink: "报告数据错误",
+      reportTitle: "哪项信息有误？",
+      fieldPrice: "价格",
+      fieldContext: "上下文/输出上限",
+      fieldBenchmark: "基准测试",
+      fieldDescription: "说明",
+      fieldOther: "其他",
+      notePlaceholder: "请填写正确的值或依据（可选，300字）。不接受链接。",
+      send: "发送",
+      cancel: "取消",
+      reportThanks: "感谢报告，我们核实后会修正。",
+      privacy: "不收集个人信息，结果不公开。",
+    },
     dashboard: {
       familiesFound: " 个模型系列",
       ofModels: "共 {m} 个模型",
@@ -1728,6 +1848,30 @@ export const translations: Record<Language, TranslationDictionary> = {
       alternativesNote: "Mismo nivel, precio de salida más cercano primero.",
       notFound: "Modelo no encontrado.",
       tokens: "tokens",
+    },
+    feedback: {
+      articleQ: "¿Te resultó útil este artículo?",
+      advisorQ: "¿Te resultó útil esta recomendación?",
+      yes: "Útil",
+      no: "No mucho",
+      thanks: "Gracias por tu opinión. La usamos para mejorar.",
+      whyNot: "¿Qué faltó?",
+      reasonCost: "Coste",
+      reasonQuality: "Calidad",
+      reasonModels: "Modelos recomendados",
+      reasonOther: "Otro",
+      reportLink: "Informar de un error en los datos",
+      reportTitle: "¿Qué está mal?",
+      fieldPrice: "Precio",
+      fieldContext: "Contexto / límite de salida",
+      fieldBenchmark: "Benchmark",
+      fieldDescription: "Descripción",
+      fieldOther: "Otro",
+      notePlaceholder: "Indica el valor correcto o la fuente (opcional, 300 caracteres). No se aceptan enlaces.",
+      send: "Enviar",
+      cancel: "Cancelar",
+      reportThanks: "Gracias por el aviso. Lo revisaremos y corregiremos.",
+      privacy: "No se recogen datos personales y los resultados no son públicos.",
     },
     dashboard: {
       familiesFound: " familias de modelos",
@@ -2048,6 +2192,30 @@ export const translations: Record<Language, TranslationDictionary> = {
       notFound: "Modell nicht gefunden.",
       tokens: "Tokens",
     },
+    feedback: {
+      articleQ: "War dieser Artikel hilfreich?",
+      advisorQ: "War diese Empfehlung hilfreich?",
+      yes: "Hilfreich",
+      no: "Eher nicht",
+      thanks: "Danke für das Feedback. Wir nutzen es zur Verbesserung.",
+      whyNot: "Was hat gefehlt?",
+      reasonCost: "Kosten",
+      reasonQuality: "Qualität",
+      reasonModels: "Empfohlene Modelle",
+      reasonOther: "Sonstiges",
+      reportLink: "Datenfehler melden",
+      reportTitle: "Was ist falsch?",
+      fieldPrice: "Preis",
+      fieldContext: "Kontext / Ausgabelimit",
+      fieldBenchmark: "Benchmark",
+      fieldDescription: "Beschreibung",
+      fieldOther: "Sonstiges",
+      notePlaceholder: "Bitte richtigen Wert oder Quelle angeben (optional, 300 Zeichen). Links werden nicht angenommen.",
+      send: "Senden",
+      cancel: "Abbrechen",
+      reportThanks: "Danke für die Meldung. Wir prüfen und korrigieren es.",
+      privacy: "Es werden keine personenbezogenen Daten erhoben, Ergebnisse sind nicht öffentlich.",
+    },
     dashboard: {
       familiesFound: " Modellfamilien",
       ofModels: "insgesamt {m} Modelle",
@@ -2366,6 +2534,30 @@ export const translations: Record<Language, TranslationDictionary> = {
       alternativesNote: "Même niveau, prix de sortie le plus proche d'abord.",
       notFound: "Modèle introuvable.",
       tokens: "tokens",
+    },
+    feedback: {
+      articleQ: "Cet article vous a-t-il été utile ?",
+      advisorQ: "Cette recommandation vous a-t-elle été utile ?",
+      yes: "Utile",
+      no: "Pas vraiment",
+      thanks: "Merci pour votre avis. Il nous aide à améliorer le site.",
+      whyNot: "Qu’est-ce qui manquait ?",
+      reasonCost: "Coût",
+      reasonQuality: "Qualité",
+      reasonModels: "Modèles recommandés",
+      reasonOther: "Autre",
+      reportLink: "Signaler une erreur de données",
+      reportTitle: "Qu’est-ce qui est faux ?",
+      fieldPrice: "Prix",
+      fieldContext: "Contexte / limite de sortie",
+      fieldBenchmark: "Benchmark",
+      fieldDescription: "Description",
+      fieldOther: "Autre",
+      notePlaceholder: "Indiquez la valeur correcte ou la source (facultatif, 300 caractères). Les liens ne sont pas acceptés.",
+      send: "Envoyer",
+      cancel: "Annuler",
+      reportThanks: "Merci pour le signalement. Nous allons vérifier et corriger.",
+      privacy: "Aucune donnée personnelle n’est collectée et les résultats ne sont pas publics.",
     },
     dashboard: {
       familiesFound: " familles de modèles",

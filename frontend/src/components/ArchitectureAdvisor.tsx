@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import type { RecommendationRequest, ArchitectureRecommendationResult, TrendingTemplate } from '../types';
 import { API_BASE_URL } from '../api';
+import { HelpfulVote } from './Feedback';
 import { useLanguage } from '../context/LanguageContext';
 
 export const ArchitectureAdvisor: React.FC = () => {
@@ -741,6 +742,18 @@ export const ArchitectureAdvisor: React.FC = () => {
                     </div>
                   </div>
                 ))}
+              </div>
+
+              {/* 비공개 피드백 — 선택 규칙(가격 10배당 60점)을 실제 반응으로 조정하는 근거 */}
+              <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-800">
+                <HelpfulVote
+                  key={result.basis_category || result.service_name}
+                  kind="advisor_helpful"
+                  target={result.basis_category || 'unknown'}
+                  question={g.feedback.advisorQ}
+                  reasons={[['cost', g.feedback.reasonCost], ['quality', g.feedback.reasonQuality],
+                            ['models', g.feedback.reasonModels], ['other', g.feedback.reasonOther]]}
+                />
               </div>
             </div>
           </div>

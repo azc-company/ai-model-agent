@@ -226,5 +226,7 @@ export async function recommendArchitecture(req: RecommendationRequest, models: 
     hosting_options,
     // spec_bundle 은 비워 두면 화면이 markdown_spec 으로 파일 묶음을 만든다.
     markdown_spec,
+    // 어떤 LMArena 분야로 골랐는지. 화면의 '도움이 됐나요' 가 이 단위로 모인다.
+    basis_category: picks.category,
   };
 }

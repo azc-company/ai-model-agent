@@ -1,3 +1,4 @@
+import { HelpfulVote } from './Feedback';
 import { useState, useEffect } from 'react';
 import { ArrowLeft, ExternalLink, Share2, Sparkles, Building2, Calendar, ShieldCheck } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
@@ -88,7 +89,7 @@ const MULTILINGUAL_ARTICLE_MAP: Record<string, Record<Language, string>> = {
 
 export function NewsDetailView({ article, t, onBack }: NewsDetailViewProps) {
   const [imgError, setImgError] = useState(false);
-  const { language } = useLanguage();
+  const { language, t: tr } = useLanguage();
 
   // 🚀 기사 상세 페이지 진입/기사 변경 시 화면 최상단으로 자동 스크롤 및 포커싱
   useEffect(() => {
@@ -836,6 +837,11 @@ export function NewsDetailView({ article, t, onBack }: NewsDetailViewProps) {
                     ].filter(Boolean) as string[] : []),
                   ].join('\n\n')
             )}
+          </div>
+
+          {/* 비공개 피드백 — 집계는 어드민에서만. 기사 생성 품질로 되돌릴 신호다. */}
+          <div className="pt-6 border-t border-slate-100 dark:border-slate-800">
+            <HelpfulVote kind="article_helpful" target={article.id} question={tr.feedback.articleQ} />
           </div>
 
           {/* Footer Action */}

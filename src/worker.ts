@@ -5,6 +5,7 @@ import { recommendArchitecture } from './llm';
 import { ClientError } from './errors';
 import * as seo from './seo';
 import { withEdgeCache } from './edgeCache';
+import { parseFeedback } from './feedback';
 export interface Env {
   DB: D1Database;
   ASSETS: Fetcher;
@@ -648,6 +649,28 @@ async function handle(request: Request, env: Env, ctx: ExecutionContext): Promis
       return new Response(null, { status: 204, headers: { 'Access-Control-Allow-Origin': '*' } });
     }
 
+    // ─── 비공개 피드백 (src/feedback.ts) ─────────────────────────────────────
+    // 방문 집계와 같은 규칙: 봇은 무시, IP 로 요청 제한, 받을 수 없는 입력은 조용히 204.
+    if (url.pathname === '/api/v1/feedback' && request.method === 'POST') {
+      const ok = new Response(null, { status: 204, headers: { 'Access-Control-Allow-Origin': '*' } });
+      if (bot) return ok;
+      const { success } = await env.TRACK_LIMITER.limit({ key: request.headers.get('CF-Connecting-IP') || 'unknown' });
+      if (!success) return new Response(null, { status: 429, headers: { 'Access-Control-Allow-Origin': '*' } });
+      try {
+        const row = parseFeedback(await request.json());
+        if (row) {
+          await env.DB.prepare(
+            `INSERT INTO feedback (kind, target, value, note, session_id) VALUES (?, ?, ?, ?, ?)
+             ON CONFLICT(kind, target, session_id) DO UPDATE SET value = excluded.value, note = excluded.note,
+               created_at = CURRENT_TIMESTAMP`
+          ).bind(row.kind, row.target, row.value, row.note, row.session_id).run();
+        }
+      } catch {
+        // 피드백 실패가 화면을 막으면 안 된다
+      }
+      return ok;
+    }
+
     // ─── 어드민: 이용현황 요약 ──────────────────────────────────────────────
     if (url.pathname === '/api/v1/admin/analytics/summary') {
       const denied = requireAdmin(request, env);
@@ -657,7 +680,7 @@ async function handle(request: Request, env: Env, ctx: ExecutionContext): Promis
         const since = `-${days} days`;
         const db = env.DB;
 
-        const [totals, daily, topTabs, topSearches, topCompared, deviceBreakdown, countryBreakdown, topLinks, topNews, crawlers, crawlerPaths, gscTotals, gscQueries, gscPages, sources, weekly] = await Promise.all([
+        const [totals, daily, topTabs, topSearches, topCompared, deviceBreakdown, countryBreakdown, topLinks, topNews, crawlers, crawlerPaths, gscTotals, gscQueries, gscPages, sources, weekly, feedbackVotes, feedbackErrors] = await Promise.all([
           db.prepare(`SELECT COUNT(*) AS events, COUNT(DISTINCT session_id) AS sessions FROM analytics_events WHERE created_at >= datetime('now', ?)`).bind(since).first(),
           db.prepare(`SELECT date(created_at) AS day, COUNT(*) AS events, COUNT(DISTINCT session_id) AS sessions FROM analytics_events WHERE created_at >= datetime('now', ?) GROUP BY day ORDER BY day ASC`).bind(since).all(),
           db.prepare(`SELECT tab AS label, COUNT(*) AS count FROM analytics_events WHERE event_type = 'page_view' AND created_at >= datetime('now', ?) AND tab IS NOT NULL GROUP BY tab ORDER BY count DESC LIMIT 10`).bind(since).all(),
@@ -698,6 +721,15 @@ async function handle(request: Request, env: Env, ctx: ExecutionContext): Promis
               (SELECT COALESCE(SUM(clicks),0) FROM gsc_metrics WHERE dimension='query' AND date > date((SELECT MAX(date) FROM gsc_metrics), '-14 days') AND date <= date((SELECT MAX(date) FROM gsc_metrics), '-7 days')) AS clicks_prev,
               (SELECT COUNT(DISTINCT value) FROM gsc_metrics WHERE dimension='page' AND date > date((SELECT MAX(date) FROM gsc_metrics), '-28 days')) AS pages_28d
             `).first(),
+          // 비공개 피드백: 기사·추천기의 도움 여부 집계 + 모델 오류 신고 원문
+          db.prepare(`SELECT kind, target, SUM(value = 'up') AS up, SUM(value = 'down') AS down,
+                             GROUP_CONCAT(note) AS reasons
+                      FROM feedback WHERE kind IN ('article_helpful', 'advisor_helpful') AND created_at >= datetime('now', ?)
+                      GROUP BY kind, target ORDER BY (up + down) DESC LIMIT 20`).bind(since).all(),
+          db.prepare(`SELECT f.target, f.value, f.note, f.created_at, m.name
+                      FROM feedback f LEFT JOIN models m ON m.id = f.target
+                      WHERE f.kind = 'model_error' AND f.created_at >= datetime('now', ?)
+                      ORDER BY f.created_at DESC LIMIT 30`).bind(since).all(),
         ]);
 
         return new Response(JSON.stringify({
@@ -710,6 +742,8 @@ async function handle(request: Request, env: Env, ctx: ExecutionContext): Promis
           device_breakdown: deviceBreakdown.results,
           country_breakdown: countryBreakdown.results,
           top_external_links: topLinks.results,
+          feedback_votes: feedbackVotes.results,
+          feedback_errors: feedbackErrors.results,
           top_news: topNews.results,
           crawlers: crawlers.results,
           crawler_paths: crawlerPaths.results,

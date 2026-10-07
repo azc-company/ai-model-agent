@@ -86,3 +86,24 @@ export function track(eventType: AnalyticsEvent, options: { tab?: string; label?
     // 추적 실패가 실제 기능을 막으면 안 된다
   }
 }
+
+export type FeedbackKind = 'model_error' | 'article_helpful' | 'advisor_helpful';
+
+/**
+ * 비공개 피드백. 화면에 집계를 보여주지 않고 어드민에서만 본다(src/feedback.ts 참고).
+ * 내부 방문(?internal=1)은 방문 집계와 마찬가지로 보내지 않는다 — 운영 중 눌러 본 것이
+ * 실제 신호에 섞이면 안 된다. 전송 성공 여부와 무관하게 화면은 "고맙다" 로 넘어간다.
+ */
+export function sendFeedback(kind: FeedbackKind, target: string, value: string, note?: string): void {
+  try {
+    if (isExcluded()) return;
+    fetch(`${API_BASE_URL}/feedback`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ kind, target, value, note, session_id: getSessionId() }),
+      keepalive: true,
+    }).catch(() => {});
+  } catch {
+    // 피드백 실패가 화면을 막으면 안 된다
+  }
+}

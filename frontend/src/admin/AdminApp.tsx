@@ -23,6 +23,8 @@ interface Summary {
   gsc_queries: SearchRow[];
   gsc_pages: SearchRow[];
   sources?: CountRow[];
+  feedback_votes?: { kind: string; target: string; up: number; down: number; reasons: string | null }[];
+  feedback_errors?: { target: string; value: string; note: string | null; created_at: string; name: string | null }[];
   weekly?: Weekly | null;
 }
 
@@ -256,6 +258,9 @@ export const AdminApp: React.FC = () => {
                 )}
               </div>
 
+              <FeedbackVotes rows={data.feedback_votes ?? []} />
+              <FeedbackErrors rows={data.feedback_errors ?? []} />
+
               <RankedList title="🚪 첫 유입 경로 (세션)" rows={data.sources ?? []} emptyLabel="기록 없음 — 9/15 배포 이후부터 쌓인다" />
               <RankedList title="🕸️ 크롤러가 많이 읽은 경로" rows={data.crawler_paths ?? []} />
 
@@ -318,3 +323,60 @@ export const AdminApp: React.FC = () => {
     </div>
   );
 };
+
+// 비공개 피드백. 사이트에는 숫자를 내지 않고 여기서만 본다(src/feedback.ts).
+const KIND_LABEL: Record<string, string> = { article_helpful: '기사', advisor_helpful: '추천기' };
+const REASON_LABEL: Record<string, string> = { cost: '비용', quality: '품질', models: '추천 모델', other: '기타' };
+const FIELD_LABEL: Record<string, string> = { price: '가격', context: '컨텍스트', benchmark: '벤치마크', description: '설명', other: '기타' };
+
+function FeedbackVotes({ rows }: { rows: NonNullable<Summary['feedback_votes']> }) {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <h3 className="mb-3 text-sm font-bold text-slate-700">👍 도움 여부 (비공개)</h3>
+      {rows.length === 0 ? (
+        <p className="text-sm text-slate-400">아직 없음 — 기사 끝과 추천기 결과 아래에서 받는다</p>
+      ) : (
+        <table className="w-full text-sm">
+          <thead><tr className="text-left text-xs text-slate-400"><th>구분</th><th>대상</th><th className="text-right">👍</th><th className="text-right">👎</th><th>아쉬운 점</th></tr></thead>
+          <tbody>
+            {rows.map((r) => (
+              <tr key={r.kind + r.target} className="border-t border-slate-100">
+                <td className="py-1.5">{KIND_LABEL[r.kind] || r.kind}</td>
+                <td className="py-1.5 font-mono text-xs break-all">{r.target}</td>
+                <td className="py-1.5 text-right tabular-nums">{r.up}</td>
+                <td className="py-1.5 text-right tabular-nums">{r.down}</td>
+                <td className="py-1.5 text-xs text-slate-500">
+                  {(r.reasons || '').split(',').filter(Boolean).map((x) => REASON_LABEL[x] || x).join(', ')}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </div>
+  );
+}
+
+function FeedbackErrors({ rows }: { rows: NonNullable<Summary['feedback_errors']> }) {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <h3 className="mb-3 text-sm font-bold text-slate-700">🚩 모델 데이터 오류 신고</h3>
+      {rows.length === 0 ? (
+        <p className="text-sm text-slate-400">아직 없음 — 모델 상세 화면에서 받는다</p>
+      ) : (
+        <ul className="space-y-2 text-sm">
+          {rows.map((r, i) => (
+            <li key={i} className="border-t border-slate-100 pt-2">
+              <div className="flex justify-between gap-2">
+                <span className="font-semibold">{r.name || r.target} · {FIELD_LABEL[r.value] || r.value}</span>
+                <span className="text-xs text-slate-400 shrink-0">{r.created_at.slice(0, 16)}</span>
+              </div>
+              {/* 사용자 입력이라 텍스트로만 그린다(React 가 이스케이프한다). */}
+              {r.note && <p className="text-xs text-slate-600 whitespace-pre-wrap break-words">{r.note}</p>}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}

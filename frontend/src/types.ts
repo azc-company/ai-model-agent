@@ -185,6 +185,7 @@ export interface ArchitectureRecommendationResult {
   hosting_options: HostingOption[];
   markdown_spec: string;
   spec_bundle?: SpecBundle;
+  basis_category?: string;   // 모델 선택에 쓴 LMArena 분야 (coding, longer_query …)
 }
 
 export interface TrendingTemplate {

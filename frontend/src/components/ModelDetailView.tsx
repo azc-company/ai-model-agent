@@ -12,6 +12,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { fetchModelDetail } from '../api';
 import { rankOf, alternativesFor, isTruncated, apiModelIdOf } from '../data/modelDetail';
 import { track } from '../analytics';
+import { ReportDataError } from './Feedback';
 import { baseName, familyKey, shortName, type ModelFamily } from '../data/modelFamilies';
 
 // 유료 모델의 요청·토큰 한도(RPM/TPM)는 공급사가 계정 등급별로 정하고 모델별로 공개하지
@@ -200,6 +201,9 @@ export const ModelDetailView: React.FC<Props> = ({
           {isCompared ? t.dashboard.compared : t.dashboard.compareButton}
         </button>
       </div>
+
+      {/* 데이터 오류 신고 — 런치 문구의 "틀린 가격 알려주세요" 를 실제로 받는 창구 */}
+      <ReportDataError modelId={model.id} />
 
       {/* 핵심 사양 */}
       <Card title={d.keyFacts}>
