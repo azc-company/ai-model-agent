@@ -118,6 +118,7 @@ class BatchConfig:
     litellm_key: str
     model: str
     fallback_model: str = ""
+    second_model: str = ""      # 1순위가 실패하면 폴백보다 먼저 시도 (무료 체인)
 
 
 @dataclass
@@ -153,6 +154,9 @@ def load_config(environ: Mapping[str, str] | None = None) -> BatchConfig:
         # 긴 기사를 안정적으로 받아 주는 무료 폴백은 없었다. 1순위(Gemini)가 실패한
         # 날에만 쓰이므로 유료여도 비용은 무시할 수준이다. 본문은 Gemini 의 절반 이하다.
         fallback_model=source.get("LITELLM_FALLBACK_MODEL", "openai/gpt-4o-mini"),
+        # 뉴스 배치는 워크플로 env 로 무료 Nemotron 체인을 쓴다(news_batch.yml). 기본값을
+        # 바꾸지 않는 이유: 번역·체인지로그도 이 설정을 쓰는데, 무료 하루 한도를 나눠 먹는다.
+        second_model=source.get("LITELLM_SECOND_MODEL", ""),
     )
 
 _IMG_PATTERNS = (
@@ -602,14 +606,19 @@ FALLBACK_TIMEOUT = 120
 def call_llm(prompt, config):
     # 어느 모델이 썼는지 남긴다. 예전에는 로그에도 D1 에도 없어서, 폴백이 한 달 넘게
     # 죽어 있어도 알 방법이 없었다. 저장 컬럼이 아니라 배치 요약에만 쓰인다.
-    try:
-        report = _request_llm(prompt, config, config.model)
-        report["_model"] = config.model
-        return report
-    except Exception as error:
-        if not config.fallback_model or not _is_transient_llm_error(error):
-            raise
-        print(f"  [폴백] {config.model} 실패({type(error).__name__}) → {config.fallback_model}")
+    chain = [m for m in (config.model, config.second_model) if m]
+    for i, model in enumerate(chain):
+        try:
+            # 무료 체인은 100초 넘게 걸리는 날이 있다(2026-10-08 실측 41~145초).
+            timeout = FALLBACK_TIMEOUT if config.second_model or i else 60
+            report = _request_llm(prompt, config, model, timeout=timeout)
+            report["_model"] = model
+            return report
+        except Exception as error:
+            nxt = chain[i + 1] if i + 1 < len(chain) else config.fallback_model
+            if not nxt or not _is_transient_llm_error(error):
+                raise
+            print(f"  [폴백] {model} 실패({type(error).__name__}) → {nxt}")
 
     report = _request_llm(prompt, config, config.fallback_model, timeout=FALLBACK_TIMEOUT)
     if not _has_required_report_fields(report):
@@ -633,6 +642,22 @@ def drop_filtered_articles(cluster, config, checker=_is_filtered):
     return [a for a in cluster if not checker(a, config)]
 
 
+# 프롬프트에 넣는 원문 총량. 무료 Nemotron 은 원문 6,670자 묶음은 4/5 성공, 12,000자
+# 묶음은 1/6 성공(응답 100~145초로 게이트웨이 125초 한도에 걸림, 2026-10-08 실측).
+PROMPT_MATERIAL_BUDGET = 7000
+
+
+def share_budget(lengths, budget):
+    """원문별 상한. 짧은 원문이 덜 쓴 몫을 긴 원문에 넘겨 총합을 budget 이하로."""
+    caps = [0] * len(lengths)
+    left = budget
+    order = sorted(range(len(lengths)), key=lambda i: lengths[i])
+    for k, i in enumerate(order):
+        caps[i] = min(lengths[i], left // (len(order) - k))
+        left -= caps[i]
+    return caps
+
+
 def build_prompt(cluster):
     def _text(a):
         if a.get("summary_only"):
@@ -641,10 +666,12 @@ def build_prompt(cluster):
                     "이 출처에 귀속시키지 마세요. 세부는 다른 원문에서 가져오세요.)\n" + (a.get("summary") or ""))
         return a.get("body") or a["summary"]
 
+    texts = [_text(a) for a in cluster]
+    caps = share_budget([len(t) for t in texts], PROMPT_MATERIAL_BUDGET)
     combined = "\n\n---\n\n".join(
         f"Source: {a['source']}\nURL: {a.get('link', '')}\nTitle: {a['title']}\n"
-        f"Full text:\n{_text(a)}"
-        for a in cluster
+        f"Full text:\n{t[:cap]}"
+        for a, t, cap in zip(cluster, texts, caps)
     )
     # 원문이 짧은데 3,500~5,000자를 요구하면 근거 없는 문장으로 채우게 된다. 재료에 맞춘다.
     material = cluster_material(cluster)

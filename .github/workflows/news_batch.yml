@@ -9,7 +9,7 @@ on:
 jobs:
   news-d1-batch:
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 75   # 무료 체인 최악(기사당 120+120초+폴백) × 8건
 
     steps:
       - name: 📦 1. 저장소 체크아웃
@@ -36,6 +36,11 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           LITELLM_API_KEY: ${{ secrets.LITELLM_API_KEY }}
+          # 무료 체인. Gemini 선불 크레딧 소진(10/3~) 후 2026-10-08 실측: Super 가 빠르고(41~173초)
+          # 성공률도 높았다. Ultra 는 같은 날 4번 모두 120초 초과.
+          # 둘 다 실패하면 LITELLM_FALLBACK_MODEL 기본값(gpt-4o-mini, 기사당 약 ₩6).
+          LITELLM_MODEL: nemotron-3-super-free
+          LITELLM_SECOND_MODEL: nemotron-3-ultra-free
         run: |
           npm install -g wrangler
           echo "📡 RSS 수집, 클러스터링, LLM 리포트 생성 및 D1 적재 시작..."

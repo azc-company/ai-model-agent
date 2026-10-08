@@ -694,6 +694,31 @@ class ClusteringTest(unittest.TestCase):
             with redirect_stdout(io.StringIO()): gtr.call_llm("prompt", config)
         self.assertEqual(calls, ["primary", "backup"])
 
+    def test_free_chain_tries_second_model_before_paid_fallback(self):
+        import generate_trend_reports as gtr
+        from trend_report_validation import REQUIRED_REPORT_FIELDS
+        calls = []
+
+        def fake(prompt, config, model, **_):
+            calls.append(model)
+            if model != "backup":
+                raise TimeoutError()
+            return {f: "값" for f in REQUIRED_REPORT_FIELDS}
+
+        config = gtr.BatchConfig(litellm_url="u", litellm_key="k", model="ultra-free",
+                                 fallback_model="backup", second_model="super-free")
+        with patch.object(gtr, "_request_llm", fake):
+            with redirect_stdout(io.StringIO()): report = gtr.call_llm("prompt", config)
+        self.assertEqual(calls, ["ultra-free", "super-free", "backup"])
+        self.assertEqual(report["_model"], "backup")
+
+    def test_prompt_material_is_capped_and_short_sources_keep_everything(self):
+        import generate_trend_reports as gtr
+        self.assertEqual(gtr.share_budget([1000, 12000, 12000], 7000), [1000, 3000, 3000])
+        self.assertEqual(gtr.share_budget([500, 800], 7000), [500, 800])
+        prompt = gtr.build_prompt([dict(self._art(t), body="본문 " * 1500) for t in ("A", "B")])
+        self.assertLess(prompt.count("본문"), 2 * 1500)   # 원문 2건(각 4,500자)이 7,000자로 잘림
+
     def test_content_filter_raises_a_named_error(self):
         import generate_trend_reports as gtr
         blocked = {"choices": [{"finish_reason": "content_filter",
