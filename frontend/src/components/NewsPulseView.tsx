@@ -891,40 +891,38 @@ export default function NewsPulseView() {
                     </div>
 
                     {/* Actionable Insight (실전 팁) */}
-                    {(article.actionable_insight && (article.actionable_insight.developer || article.actionable_insight.pm || article.actionable_insight.business || article.actionable_insight.researcher)) && (
-                      <div className="bg-blue-50/50 dark:bg-blue-900/10 rounded-lg p-4 border border-blue-100 dark:border-blue-900/30">
-                        <h4 className="text-sm font-bold text-blue-800 dark:text-blue-300 mb-3 flex items-center gap-2">
-                          <Lightbulb className="w-4 h-4 text-yellow-500" /> 
-                          {t.insightTitle}
-                        </h4>
-                        <div className="space-y-3">
-                          {activeLens === 'all' || activeLens === 'developer' ? article.actionable_insight.developer && (
-                            <div className="text-sm">
-                              <span className="font-semibold text-blue-700 dark:text-blue-400 mr-2">{t.devLabel}</span>
-                              <span className="text-gray-700 dark:text-gray-300">{article.actionable_insight.developer}</span>
-                            </div>
-                          ) : null}
-                          {activeLens === 'all' || activeLens === 'pm' ? article.actionable_insight.pm && (
-                            <div className="text-sm">
-                              <span className="font-semibold text-blue-700 dark:text-blue-400 mr-2">{t.pmLabel}</span>
-                              <span className="text-gray-700 dark:text-gray-300">{article.actionable_insight.pm}</span>
-                            </div>
-                          ) : null}
-                          {activeLens === 'all' || activeLens === 'business' ? article.actionable_insight.business && (
-                            <div className="text-sm">
-                              <span className="font-semibold text-blue-700 dark:text-blue-400 mr-2">{t.bizLabel}</span>
-                              <span className="text-gray-700 dark:text-gray-300">{article.actionable_insight.business}</span>
-                            </div>
-                          ) : null}
-                          {activeLens === 'all' || activeLens === 'researcher' ? article.actionable_insight.researcher && (
-                            <div className="text-sm">
-                              <span className="font-semibold text-blue-700 dark:text-blue-400 mr-2">{t.resLabel}</span>
-                              <span className="text-gray-700 dark:text-gray-300">{article.actionable_insight.researcher}</span>
-                            </div>
-                          ) : null}
+                    {(() => {
+                      // 직군 렌즈(개발·기획·비즈니스·연구)면 그 직군 팁만, 그 밖의 렌즈(전체·최신 속보·
+                      // Agent)는 전부 보여준다. 예전에는 "전체" 이외의 비직군 렌즈에서 어느 팁도 조건에
+                      // 걸리지 않아 상자 제목만 빈 채로 떴다(2026-08-04 도입부터).
+                      const ai = article.actionable_insight;
+                      if (!ai) return null;
+                      const ROLES = [
+                        ['developer', t.devLabel, ai.developer],
+                        ['pm', t.pmLabel, ai.pm],
+                        ['business', t.bizLabel, ai.business],
+                        ['researcher', t.resLabel, ai.researcher],
+                      ] as const;
+                      const roleLens = ROLES.some(([k]) => k === activeLens) ? activeLens : null;
+                      const tips = ROLES.filter(([k, , text]) => text && (!roleLens || k === roleLens));
+                      if (!tips.length) return null;   // 보일 팁이 없으면 상자도 그리지 않는다
+                      return (
+                        <div className="bg-blue-50/50 dark:bg-blue-900/10 rounded-lg p-4 border border-blue-100 dark:border-blue-900/30">
+                          <h4 className="text-sm font-bold text-blue-800 dark:text-blue-300 mb-3 flex items-center gap-2">
+                            <Lightbulb className="w-4 h-4 text-yellow-500" />
+                            {t.insightTitle}
+                          </h4>
+                          <div className="space-y-3">
+                            {tips.map(([k, label, text]) => (
+                              <div key={k} className="text-sm">
+                                <span className="font-semibold text-blue-700 dark:text-blue-400 mr-2">{label}</span>
+                                <span className="text-gray-700 dark:text-gray-300">{text}</span>
+                              </div>
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      );
+                    })()}
                   </div>
                 </div>
               </div>
