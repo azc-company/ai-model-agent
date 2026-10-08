@@ -12,6 +12,7 @@
 
   python3 backend/scripts/regenerate_articles.py --since 2026-09-04 --until 2026-09-06
   python3 backend/scripts/regenerate_articles.py --since ... --limit 3   # 표본 확인
+  LITELLM_FALLBACK_MODEL= ...   # 폴백이 쓴 기사를 다시 쓸 때 — 같은 폴백이 다시 쓰면 의미가 없다
   npx wrangler d1 execute llm-compass-db --remote --file=seed_regen.sql
 """
 import argparse
@@ -36,12 +37,13 @@ def esc(s):
     return (s or "").replace("'", "''")
 
 
-def fetch_targets(since, until, runner=subprocess.run):
-    """대상 기사를 D1 에서 읽는다."""
+def fetch_targets(since, until, runner=subprocess.run, before=None):
+    """대상 기사를 D1 에서 읽는다. before(UTC 시각)는 같은 날 뒤에 쓴 기사를 뺄 때."""
     sql = (
         "SELECT id, title, original_sources FROM trend_news "
         f"WHERE date(created_at) >= '{since}' AND date(created_at) <= '{until}' "
-        "ORDER BY created_at"
+        + (f"AND created_at < '{before}' " if before else "")
+        + "ORDER BY created_at"
     )
     res = runner(
         ["npx", "wrangler", "d1", "execute", "llm-compass-db", "--remote", "--json", "--command", sql],
@@ -139,10 +141,11 @@ def main():
     ap.add_argument("--since", required=True)
     ap.add_argument("--until", required=True)
     ap.add_argument("--limit", type=int)
+    ap.add_argument("--before", help="UTC 'YYYY-MM-DD HH:MM' 이전 기사만")
     ap.add_argument("--out", default=OUT)
     args = ap.parse_args()
 
-    targets = fetch_targets(args.since, args.until)
+    targets = fetch_targets(args.since, args.until, before=args.before)
     if args.limit:
         targets = targets[: args.limit]
     print(f"대상 {len(targets)}건 ({args.since} ~ {args.until})\n")
