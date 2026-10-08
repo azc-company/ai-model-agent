@@ -113,6 +113,7 @@ class LlmClientTests(unittest.TestCase):
                 "developer_tip",
                 "pm_tip",
                 "business_tip",
+                "researcher_tip",
                 "tags",
                 "impact_score",
                 "key_numbers",
@@ -344,7 +345,7 @@ class OrchestratorTests(unittest.TestCase):
                 writer=lambda sql: written_sql.append(sql) is None,
                 feeds=("agent-feed", "research-feed"),
                 # 원문 스크래핑이 테스트에서 실제 네트워크를 타지 않게 한다
-                body_attacher=lambda arts: [dict(a, body="본문 " * 200) for a in arts],
+                body_attacher=lambda arts: [dict(a, body="본문 " * 1500) for a in arts],
                 catalog_loader=lambda: [("gpt-4o", "GPT-4o")],
                 published_loader=lambda: set(),
             )
@@ -370,7 +371,7 @@ class OrchestratorTests(unittest.TestCase):
             generator=lambda prompt, config: generator_calls.append((prompt, config)),
             writer=lambda _sql: True,
             feeds=("one-feed",),
-            body_attacher=lambda arts: [dict(a, body="본문 " * 200) for a in arts],
+            body_attacher=lambda arts: [dict(a, body="본문 " * 1500) for a in arts],
             catalog_loader=lambda: [("gpt-4o", "GPT-4o")],
             published_loader=lambda: set(),
         )
@@ -456,7 +457,7 @@ class OrchestratorTests(unittest.TestCase):
             generator=lambda _p, _c: valid_generated_report(),
             writer=lambda sql: written.append(sql) is None,
             feeds=("one-feed",),
-            body_attacher=lambda arts: [dict(a, body="본문 " * 200) for a in arts],
+            body_attacher=lambda arts: [dict(a, body="본문 " * 1500) for a in arts],
             catalog_loader=lambda: [("gpt-4o", "GPT-4o")],
             published_loader=published_loader,
         )
@@ -489,7 +490,7 @@ class OrchestratorTests(unittest.TestCase):
             generator=lambda _p, _c: valid_generated_report(),
             writer=lambda _sql: True,
             feeds=("one-feed",),
-            body_attacher=lambda a: seen.extend(x["link"] for x in a) or [dict(x, body="본문 " * 200) for x in a],
+            body_attacher=lambda a: seen.extend(x["link"] for x in a) or [dict(x, body="본문 " * 1500) for x in a],
             catalog_loader=lambda: [("gpt-4o", "GPT-4o")],
             published_loader=lambda: set(),
             now=lambda: today,
@@ -510,6 +511,88 @@ class OrchestratorTests(unittest.TestCase):
             summary, _ = self._one_source_batch(lambda: None)
         self.assertEqual(summary.reasons["published_lookup_failed"], 1)
         self.assertEqual(summary.clusters, 1)
+
+
+class ClusterSelectionTest(unittest.TestCase):
+    """재탕을 막은 뒤 대부분이 원문 1건짜리가 되자, 크기만 보는 정렬은 피드 목록 순서로
+    상위를 채웠다(TechCrunch 투자 속보가 35%). 재료가 많고 출처가 단단한 묶음을 고른다."""
+
+    @staticmethod
+    def art(url, chars, title="t", summary_only=False):
+        return {"link": url, "title": title, "summary": "s", "source": url.split("/")[2],
+                "body": "" if summary_only else "가" * chars, **({"summary_only": True} if summary_only else {})}
+
+    def test_thin_single_source_is_skipped(self):
+        from generate_trend_reports import select_clusters
+        chosen, reasons = select_clusters([[self.art("https://techcrunch.com/a", 2400)]])
+        self.assertEqual(chosen, [])
+        self.assertEqual(reasons["thin_cluster"], 1)
+
+    def test_more_material_and_tech_sources_rank_first(self):
+        from generate_trend_reports import select_clusters
+        news = [self.art("https://techcrunch.com/funding", 5000)]
+        tech = [self.art("https://huggingface.co/blog/x", 12000)]
+        multi = [self.art("https://arstechnica.com/a", 6000), self.art("https://wired.com/b", 6000)]
+        chosen, _ = select_clusters([news, tech, multi], limit=2)
+        self.assertNotIn(news, chosen)
+
+    def test_one_outlet_cannot_take_more_than_two_slots(self):
+        from generate_trend_reports import select_clusters
+        cs = [[self.art(f"https://techcrunch.com/{i}", 9000)] for i in range(4)]
+        chosen, reasons = select_clusters(cs)
+        self.assertEqual(len(chosen), 2)
+        self.assertEqual(reasons["domain_cap"], 2)
+
+    def test_official_summary_needs_coverage_to_be_written(self):
+        from generate_trend_reports import select_clusters
+        alone = [self.art("https://openai.com/index/gpt-6", 0, summary_only=True)]
+        paired = alone + [self.art("https://techcrunch.com/gpt-6", 7000)]
+        chosen, reasons = select_clusters([alone, paired])
+        self.assertEqual(chosen, [paired])
+        self.assertEqual(reasons["summary_only_cluster"], 1)
+
+    def test_official_summary_is_kept_only_for_blocked_publishers(self):
+        import generate_trend_reports as gtr
+        arts = [{"link": "https://openai.com/index/x"}, {"link": "https://example.com/y"}]
+        with patch.object(gtr, "fetch_article_body", lambda url: ""), patch.object(gtr.time, "sleep", lambda s: None), \
+             redirect_stdout(io.StringIO()):
+            kept = gtr.attach_bodies(arts)
+        self.assertEqual([a["link"] for a in kept], ["https://openai.com/index/x"])
+        self.assertTrue(kept[0]["summary_only"])
+
+    def test_prompt_length_follows_material_and_flags_summaries(self):
+        import generate_trend_reports as gtr
+        short = gtr.build_prompt([self.art("https://techcrunch.com/a", 3000)])
+        long = gtr.build_prompt([self.art("https://huggingface.co/b", 9000)])
+        self.assertIn("1,500~2,500자", short)       # 짧은 원문을 3,500자로 부풀리게 하지 않는다
+        self.assertIn("3,500~5,000자", long)
+        paired = gtr.build_prompt([self.art("https://openai.com/x", 0, summary_only=True),
+                                   self.art("https://techcrunch.com/x", 7000)])
+        self.assertIn("원문 접근 불가", paired)
+        self.assertIn("researcher_tip", long)
+
+
+class FallbackAlertTest(unittest.TestCase):
+    """10/3~10/8 기사 48건 전부를 폴백이 썼는데 6일간 아무도 몰랐다."""
+
+    def setUp(self):
+        self.config = BatchConfig("https://gateway.test/v1", "k", "gemini/gemini-3.7-flash", "openai/gpt-4o-mini")
+
+    def summary(self, primary, fallback):
+        s = BatchSummary(generated=primary + fallback)
+        if primary: s.reasons["생성 모델 gemini/gemini-3.7-flash"] = primary
+        if fallback: s.reasons["생성 모델 openai/gpt-4o-mini"] = fallback
+        return s
+
+    def test_mostly_fallback_raises_an_alert(self):
+        from generate_trend_reports import fallback_alert
+        self.assertIn("8건 중 8건", fallback_alert(self.summary(0, 8), self.config))
+        self.assertIsNotNone(fallback_alert(self.summary(4, 4), self.config))
+
+    def test_occasional_fallback_is_fine(self):
+        from generate_trend_reports import fallback_alert
+        self.assertIsNone(fallback_alert(self.summary(7, 1), self.config))
+        self.assertIsNone(fallback_alert(self.summary(0, 0), self.config))
 
 
 class CatalogAliasTest(unittest.TestCase):

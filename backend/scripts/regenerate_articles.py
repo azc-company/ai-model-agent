@@ -77,7 +77,8 @@ def build_update_sql(article_id, report, cluster, catalog=()):
         and str(n.get("source_url") or "").strip() in cluster_urls
     ]
     tldr = report.get("tldr", "")
-    takeaways = [tldr, report.get("developer_tip", ""), report.get("pm_tip", ""), report.get("business_tip", "")]
+    takeaways = [tldr, report.get("developer_tip", ""), report.get("pm_tip", ""),
+                 report.get("business_tip", ""), report.get("researcher_tip", "")]
     mentioned = find_mentioned_models(f"{report.get('title','')} {report.get('blog_body','')}", catalog)
     report_type = "🔮 종합 트렌드 리포트" if len(cluster) > 1 else "🔎 심층 리포트"
     j = lambda v: esc(json.dumps(v, ensure_ascii=False))  # noqa: E731

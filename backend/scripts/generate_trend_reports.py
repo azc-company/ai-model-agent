@@ -70,6 +70,8 @@ TREND_REPORT_SCHEMA = {
         "developer_tip": {"type": "string"},
         "pm_tip": {"type": "string"},
         "business_tip": {"type": "string"},
+        # 연구 렌즈용. 2026-10 까지 429건 모두 이 칸이 없어 "최신 논문" 렌즈에 팁이 0건이었다.
+        "researcher_tip": {"type": "string"},
         "tags": {"type": "array", "items": {"type": "string"}},
         "impact_score": {"type": "integer"},
         # 원문에서 확인한 수치만. source_url 을 못 대면 넣지 못한다.
@@ -99,6 +101,7 @@ TREND_REPORT_SCHEMA = {
         "developer_tip",
         "pm_tip",
         "business_tip",
+        "researcher_tip",
         "tags",
         "impact_score",
         "key_numbers",
@@ -266,18 +269,39 @@ def fetch_article_body(url):
         return ""
 
 
+# 본문 수집을 막는 공식 발표처. OpenAI 뉴스는 페이지가 403 이고 RSS 에는 160자 요약뿐이라
+# 하루 7건씩 전부 버려졌다(2026-10-08 실측). 우회하지 않는다. 대신 제목·요약으로
+# 클러스터링에 넣어 같은 사건을 다룬 보도와 묶는다 — 공식 링크는 출처로, 본문은 보도에서.
+# 보도와 묶이지 못한 공식 발표는 select_clusters 가 버린다(요약만으로는 쓰지 않는다).
+OFFICIAL_NO_BODY = ("openai.com",)
+
+
+def _host(url):
+    return urllib.parse.urlparse(url or "").hostname or ""
+
+
+def _is_official_no_body(url):
+    h = _host(url)
+    return any(h == d or h.endswith("." + d) for d in OFFICIAL_NO_BODY)
+
+
 def attach_bodies(articles):
-    """각 기사에 body 를 채우고, 실패한 것은 버린다."""
-    kept, dropped = [], 0
+    """각 기사에 body 를 채우고, 실패한 것은 버린다(본문을 막는 공식 발표처는 요약으로 남긴다)."""
+    kept, dropped, summary_only = [], 0, 0
     for a in articles:
         body = fetch_article_body(a.get("link", ""))
         if body:
             a["body"] = body
             kept.append(a)
+        elif _is_official_no_body(a.get("link", "")):
+            a["body"] = ""
+            a["summary_only"] = True
+            kept.append(a)
+            summary_only += 1
         else:
             dropped += 1
         time.sleep(0.4)   # 같은 도메인을 연달아 때리지 않는다
-    print(f"  본문 확보 {len(kept)}건 / 제외 {dropped}건")
+    print(f"  본문 확보 {len(kept) - summary_only}건 / 공식 발표 요약만 {summary_only}건 / 제외 {dropped}건")
     return kept
 
 
@@ -400,7 +424,78 @@ def cluster_articles(raw, threshold=CLUSTER_SIM):
         clusters.append([raw[k] for k in chosen])
 
     clusters.sort(key=len, reverse=True)
-    return clusters[:MAX_CLUSTERS]
+    return clusters
+
+
+# ─── 클러스터 선택 ───────────────────────────────────────────────────────────
+# 예전에는 크기순으로만 정렬해 상위 8개를 썼다. 재탕을 막은 뒤(9/30) 대부분이 원문
+# 1건짜리가 되자 크기가 같은 것끼리는 "피드 목록 순서" 로 자리가 정해졌고, 목록 2번째인
+# TechCrunch 의 투자·스타트업 속보가 상위를 채웠다(원문 비중 9/14~29 Google·DeepMind
+# 35% → 9/30~ TechCrunch 35%). 기사 본문 중앙값이 3,650자 → 1,398자로 떨어졌다.
+# 원문이 짧으면 모델은 근거 없이 늘릴 수 없다 — 재료가 많은 묶음을 골라야 한다.
+MIN_MATERIAL_CHARS = 4000     # 원문 본문 합계가 이보다 적으면 쓰지 않는다(짧은 단독 속보)
+MAX_PER_DOMAIN = 2            # 같은 매체가 하루 상위를 독차지하지 않게
+# 1차·기술 출처. 같은 재료량이면 일반 뉴스보다 앞에 둔다.
+TECH_SOURCES = (
+    "openai.com", "deepmind.google", "deepmind.com", "blog.google", "research.google",
+    "huggingface.co", "aws.amazon.com", "blogs.nvidia.com", "microsoft.com", "together.ai",
+    "mistral.ai", "simonwillison.net", "magazine.sebastianraschka.com", "lilianweng.github.io",
+    "interconnects.ai", "jack-clark.net", "aisnakeoil.com", "arstechnica.com",
+)
+
+
+def _is_tech_source(url):
+    h = _host(url)
+    return any(h == d or h.endswith("." + d) for d in TECH_SOURCES)
+
+
+def cluster_material(cluster):
+    """쓸 수 있는 원문 분량. 프롬프트에 넣는 상한(MAX_BODY_CHARS)까지만 센다."""
+    return sum(min(len(a.get("body") or ""), MAX_BODY_CHARS) for a in cluster)
+
+
+def cluster_score(cluster, catalog=()):
+    material = cluster_material(cluster)
+    tier = sum(1 for a in cluster if _is_tech_source(a.get("link", "")))
+    official = any(a.get("summary_only") for a in cluster)
+    text = " ".join(f"{a.get('title', '')} {(a.get('body') or '')[:4000]}" for a in cluster)
+    models = len(find_mentioned_models(text, catalog)) if catalog else 0
+    return (math.log10(max(material, 1)) * 10   # 재료량 (10배마다 +10)
+            + 4 * (len(cluster) - 1)            # 여러 원문이 다룬 사건
+            + 3 * tier                          # 1차·기술 출처
+            + (5 if official else 0)            # 공식 발표가 함께 묶임
+            + 2 * min(models, 3))               # 카탈로그 모델과 연결
+
+
+def _lead_domain(cluster):
+    bodied = [a for a in cluster if a.get("body")] or cluster
+    return _host(max(bodied, key=lambda a: len(a.get("body") or "")).get("link", "")).removeprefix("www.")
+
+
+def select_clusters(clusters, catalog=(), limit=None):
+    """점수순으로 고르되, 재료가 부족한 묶음은 버리고 매체당 하루 MAX_PER_DOMAIN 건까지.
+
+    (선택된 묶음, 제외 사유 Counter) 를 돌려준다.
+    """
+    limit = MAX_CLUSTERS if limit is None else limit
+    chosen, reasons, per_domain = [], Counter(), Counter()
+    for c in sorted(clusters, key=lambda c: cluster_score(c, catalog), reverse=True):
+        if not any(a.get("body") for a in c):
+            reasons["summary_only_cluster"] += 1      # 보도와 묶이지 못한 공식 발표
+            continue
+        if cluster_material(c) < MIN_MATERIAL_CHARS:
+            reasons["thin_cluster"] += 1
+            continue
+        d = _lead_domain(c)
+        if per_domain[d] >= MAX_PER_DOMAIN:
+            reasons["domain_cap"] += 1
+            continue
+        if len(chosen) >= limit:
+            reasons["over_limit"] += 1
+            continue
+        chosen.append(c)
+        per_domain[d] += 1
+    return chosen, reasons
 
 
 class ContentFiltered(Exception):
@@ -539,11 +634,25 @@ def drop_filtered_articles(cluster, config, checker=_is_filtered):
 
 
 def build_prompt(cluster):
+    def _text(a):
+        if a.get("summary_only"):
+            # 공식 발표 원문은 읽지 못했다. 요약에 없는 세부를 이 출처에 붙이면 지어낸 것이 된다.
+            return ("(공식 발표 — 원문 접근 불가, 아래는 RSS 요약뿐입니다. 이 요약에 없는 세부사항을 "
+                    "이 출처에 귀속시키지 마세요. 세부는 다른 원문에서 가져오세요.)\n" + (a.get("summary") or ""))
+        return a.get("body") or a["summary"]
+
     combined = "\n\n---\n\n".join(
         f"Source: {a['source']}\nURL: {a.get('link', '')}\nTitle: {a['title']}\n"
-        f"Full text:\n{a.get('body') or a['summary']}"
+        f"Full text:\n{_text(a)}"
         for a in cluster
     )
+    # 원문이 짧은데 3,500~5,000자를 요구하면 근거 없는 문장으로 채우게 된다. 재료에 맞춘다.
+    material = cluster_material(cluster)
+    if material < 6000:
+        length_rule = ("   blog_body 는 원문 분량에 맞춰 **1,500~2,500자**, 섹션 **3~4개**로 쓰세요.\n"
+                       "   원문에 없는 내용으로 분량을 늘리지 마세요.")
+    else:
+        length_rule = "   blog_body 는 **3,500~5,000자**, 섹션 **4~6개**로 쓰세요. 짧게 끝내지 마세요."
     # 이웃이 없는 기사도 단독 클러스터로 온다. 1건짜리에 "종합 분석" 을 시키면
     # 있지도 않은 다른 기사를 지어내 엮는다.
     if len(cluster) == 1:
@@ -560,7 +669,7 @@ def build_prompt(cluster):
 [요구사항]
 1. 단순 요약이 아닌 맥락(Context) 기반 심층 조사보도 형태여야 합니다.
 2. 글의 흐름에 맞게 동적으로 섹션(##)을 구성하세요. 고정 템플릿 금지.
-   blog_body 는 **3,500~5,000자**, 섹션 **4~6개**로 쓰세요. 짧게 끝내지 마세요.
+{length_rule}
    원문마다 최소 한 가지씩 구체적 사실(수치·인용·기능명)을 본문에 녹이세요.
    독자가 원문을 읽지 않아도 무슨 일이 있었는지 알 수 있어야 합니다.
 3. 말투는 반드시 한국 기술 미디어 표준인 합쇼체(~습니다, ~입니다)를 사용하세요.
@@ -622,6 +731,7 @@ JSON으로만 응답하세요:
   "developer_tip": "개발자 대상 실무 활용 팁 1문장",
   "pm_tip": "기획자/PM 대상 실전 팁 1문장",
   "business_tip": "비즈니스 리더 대상 TCO/보안/ROI 팁 1문장",
+  "researcher_tip": "연구자/학계 대상 1문장 — 방법론·평가·재현 관점의 함의. 연구 관점이 없는 기사면 빈 문자열",
   "tags": ["#태그1", "#태그2", "#태그3", "#태그4"],
   "impact_score": 92
 }}"""
@@ -730,7 +840,9 @@ def build_insert_sql(report, cluster, report_id, catalog=()):
     sources = json.dumps([{"title": a["source"], "url": a["link"]} for a in cluster])
     tags = json.dumps(report.get("tags", ["#AI트렌드", "#종합리포트"]))
     tldr = report.get("tldr", "")
-    key_takeaways = json.dumps([tldr, report.get("developer_tip",""), report.get("pm_tip",""), report.get("business_tip","")])
+    # 워커는 5번째 칸이 있을 때만 연구자 팁을 싣는다(resolveInsight).
+    key_takeaways = json.dumps([tldr, report.get("developer_tip",""), report.get("pm_tip",""),
+                                report.get("business_tip",""), report.get("researcher_tip","")])
     matched_lenses = json.dumps(["developer","agent","pm","business","researcher","synthesized"])
 
     def esc(s):
@@ -872,11 +984,12 @@ def run_batch(
     if dropped_no_body:
         summary.reasons["no_body"] += dropped_no_body
 
-    clusters = cluster_articles(accepted_articles)
+    catalog = catalog_loader()   # 회차당 1회만 조회한다 (선택 점수와 기사-모델 연결에 쓴다)
+    clusters, select_reasons = select_clusters(cluster_articles(accepted_articles), catalog)
+    summary.reasons.update(select_reasons)
     summary.clusters = len(clusters)
     seen_titles: set[str] = set()
     seen_sources: set[str] = set()
-    catalog = catalog_loader()   # 회차당 1회만 조회한다
 
     for cluster in clusters:
         try:
@@ -933,6 +1046,23 @@ def exit_code_for(summary):
     return 0
 
 
+# 폴백이 이 비율 이상을 쓴 날은 실패로 알린다. 2026-10-03~08 Gemini 선불 크레딧이 바닥나
+# 기사 48건 전부를 폴백(gpt-4o-mini, 본문이 절반 이하)이 썼는데 6일간 아무도 몰랐다.
+# 폴백은 장애를 버티라고 둔 것이지 상시 경로가 아니다.
+FALLBACK_ALERT_SHARE = 0.5
+
+
+def fallback_alert(summary, config):
+    """폴백 비중이 기준 이상이면 알림 문구, 아니면 None."""
+    if not summary.generated or not config.fallback_model:
+        return None
+    used = summary.reasons.get(f"생성 모델 {config.fallback_model}", 0)
+    if used / summary.generated < FALLBACK_ALERT_SHARE:
+        return None
+    return (f"폴백 모델이 기사 {summary.generated}건 중 {used}건을 썼습니다 — 1순위 {config.model} 이 "
+            f"실패하고 있습니다. 위의 '[폴백] … 실패(원인)' 줄을 확인하세요.")
+
+
 def _print_summary(summary):
     print("\n" + "=" * 60)
     print(
@@ -958,6 +1088,7 @@ def main():
     summary = run_batch(config)
     _print_summary(summary)
     code = exit_code_for(summary)
+    alert = fallback_alert(summary, config)
     if code == 0:
         # 새 원문이 없어 0건인 날이 생기면서 "최신 기사 시각" 으로는 배치 정체를 가릴 수
         # 없게 됐다. 정상 종료한 회차를 따로 남긴다.
@@ -967,6 +1098,11 @@ def main():
             "ON CONFLICT(name) DO UPDATE SET ran_at = excluded.ran_at, "
             "collected = excluded.collected, saved = excluded.saved;"
         )
+    if alert:
+        # 기사는 저장됐고 서비스 상태 기록(batch_runs)도 남겼다. 워크플로만 실패로 표시해
+        # GitHub 실패 알림이 가게 한다 — 조용히 품질이 떨어지는 것을 막는 게 목적이다.
+        print(f"::error::{alert}")
+        return 1
     return code
 
 if __name__ == "__main__":
