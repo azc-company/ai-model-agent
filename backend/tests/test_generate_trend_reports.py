@@ -732,6 +732,13 @@ class ClusteringTest(unittest.TestCase):
             with self.assertRaises(json.JSONDecodeError):
                 gtr._request_llm("p", config, "m")
 
+    def test_lost_line_breaks_are_restored(self):
+        import generate_trend_reports as gtr
+        self.assertEqual(gtr.restore_line_breaks("## 제목  본문입니다. ### 소제목  | a | b |  |---|---|  끝"),
+                         "## 제목\n\n본문입니다.\n\n### 소제목\n\n| a | b |\n|---|---|\n\n끝")
+        self.assertEqual(gtr.restore_line_breaks("## 제목\\n\\n본문"), "## 제목\n\n본문")
+        self.assertEqual(gtr.restore_line_breaks("## 제목\n\n본문  두 칸"), "## 제목\n\n본문  두 칸")
+
     def test_content_filter_raises_a_named_error(self):
         import generate_trend_reports as gtr
         blocked = {"choices": [{"finish_reason": "content_filter",

@@ -558,7 +558,25 @@ def _request_llm(prompt, config, model, max_tokens=12000, timeout=60):
         raw = re.sub(r"^```json\s*", "", raw).strip()
         raw = re.sub(r"```$", "", raw).strip()
         report = json.loads(raw)
+        if isinstance(report.get("blog_body"), str):
+            report["blog_body"] = restore_line_breaks(report["blog_body"])
         return _normalize_qwen_report(report) if _is_qwen_model(model) else report
+
+
+def restore_line_breaks(body):
+    """줄바꿈이 사라진 마크다운 본문을 되살린다.
+
+    줄바꿈이 없으면 첫 줄 "## 제목" 에 본문 전체가 붙어 화면에 제목 크기로 나온다.
+    - 9/2~3 기사: 줄바꿈이 "\\n" 글자로 이중 이스케이프돼 저장됐다.
+    - Nemotron 무료(10/8): 줄바꿈 자리에 공백 두 칸을 넣는다.
+    """
+    if "\n" in body:
+        return body
+    if "\\n" in body:
+        return body.replace("\\n", "\n")
+    body = re.sub(r" {2,}", "\n\n", body)
+    body = re.sub(r"(?<=\S) +(#{2,4} )", r"\n\n\1", body)   # 문장 뒤에 붙은 소제목
+    return re.sub(r"\|\n\n\|", "|\n|", body)                  # 표 행은 붙여 둔다
 
 
 def _normalize_qwen_report(report):
