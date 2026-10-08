@@ -719,6 +719,19 @@ class ClusteringTest(unittest.TestCase):
         prompt = gtr.build_prompt([dict(self._art(t), body="본문 " * 1500) for t in ("A", "B")])
         self.assertLess(prompt.count("본문"), 2 * 1500)   # 원문 2건(각 4,500자)이 7,000자로 잘림
 
+    def test_null_content_is_a_transient_error(self):
+        import generate_trend_reports as gtr
+
+        class FakeResponse(io.BytesIO):
+            def __enter__(self): return self
+            def __exit__(self, *a): return False
+
+        empty = {"choices": [{"finish_reason": "stop", "message": {"content": None}}]}
+        config = gtr.BatchConfig(litellm_url="https://gw.test/v1", litellm_key="k", model="m")
+        with patch.object(gtr.urllib.request, "urlopen", lambda *a, **k: FakeResponse(json.dumps(empty).encode())):
+            with self.assertRaises(json.JSONDecodeError):
+                gtr._request_llm("p", config, "m")
+
     def test_content_filter_raises_a_named_error(self):
         import generate_trend_reports as gtr
         blocked = {"choices": [{"finish_reason": "content_filter",

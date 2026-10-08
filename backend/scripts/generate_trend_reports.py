@@ -553,7 +553,8 @@ def _request_llm(prompt, config, model, max_tokens=12000, timeout=60):
         choice = data["choices"][0]
         if choice.get("finish_reason") == "content_filter":
             raise ContentFiltered(choice["message"].get("content") or "blocked")
-        raw = choice["message"]["content"]
+        # 무료 모델은 content 가 null 인 빈 응답을 준다. "" 로 두면 JSONDecodeError 가 나 폴백으로 간다.
+        raw = choice["message"]["content"] or ""
         raw = re.sub(r"^```json\s*", "", raw).strip()
         raw = re.sub(r"```$", "", raw).strip()
         report = json.loads(raw)
