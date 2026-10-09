@@ -1,14 +1,18 @@
-// 비공개 피드백 위젯. 집계 숫자를 화면에 내지 않는다(사람이 적을 때 "0" 은 역효과).
-// 눌렀다는 사실만 브라우저에 기억해 같은 사람에게 다시 묻지 않는다.
-import React, { useState } from 'react';
+// 피드백 위젯. 기사 👍/👎 누적 수만 공개하고(0 은 숨김), 오류 신고·추천기 결과는 비공개.
+// 내 표는 브라우저에 기억해 다시 열어도 눌린 상태로 보인다.
+import React, { useEffect, useState } from 'react';
 import { ThumbsUp, ThumbsDown, Flag } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
-import { sendFeedback, type FeedbackKind } from '../analytics';
+import { fetchFeedbackCounts, sendFeedback, type FeedbackKind } from '../analytics';
+
+type Vote = 'up' | 'down';
 
 const remembered = (key: string) => { try { return localStorage.getItem(key); } catch { return null; } };
 const remember = (key: string, v: string) => { try { localStorage.setItem(key, v); } catch { /* 사생활 모드 등 */ } };
 
-/** 👍/👎. 추천기처럼 reasons 를 주면 👎 뒤에 이유를 하나 고르게 한다. */
+/** 👍/👎. 한 사람당 한 표 — 같은 버튼을 다시 누르면 취소, 반대 버튼이면 바꾼다.
+ *  기사(article_helpful)는 누적 수를 보여 준다. 0 은 숨긴다("♡ 0" 은 역효과).
+ *  추천기처럼 reasons 를 주면 👎 뒤에 이유를 하나 고르게 한다. */
 export const HelpfulVote: React.FC<{
   kind: Extract<FeedbackKind, 'article_helpful' | 'advisor_helpful'>;
   target: string;
@@ -18,39 +22,65 @@ export const HelpfulVote: React.FC<{
   const { t } = useLanguage();
   const f = t.feedback;
   const key = `fb:${kind}:${target}`;
-  const [state, setState] = useState<'idle' | 'why' | 'done'>(() => (remembered(key) ? 'done' : 'idle'));
+  const [mine, setMine] = useState<Vote | null>(() => {
+    const v = remembered(key);
+    return v === 'up' || v === 'down' ? v : null;
+  });
+  const [asking, setAsking] = useState(false);
+  const [counts, setCounts] = useState<{ up: number; down: number } | null>(null);
 
-  const vote = (value: 'up' | 'down') => {
-    if (value === 'down' && reasons?.length) { setState('why'); return; }
-    sendFeedback(kind, target, value);
-    remember(key, value);
-    setState('done');
+  useEffect(() => {
+    if (kind !== 'article_helpful') return;
+    let alive = true;
+    fetchFeedbackCounts(target).then((c) => { if (alive) setCounts(c); });
+    return () => { alive = false; };
+  }, [kind, target]);
+
+  const apply = (next: Vote | null, reason?: string) => {
+    sendFeedback(kind, target, next ?? 'clear', reason);
+    remember(key, next ?? '');
+    // 서버를 다시 읽지 않고 내 표만 반영한다.
+    setCounts((c) => {
+      if (!c) return c;
+      const n = { ...c };
+      if (mine) n[mine] = Math.max(0, n[mine] - 1);
+      if (next) n[next] += 1;
+      return n;
+    });
+    setMine(next);
+    setAsking(false);
   };
-  const because = (reason: string) => {
-    sendFeedback(kind, target, 'down', reason);
-    remember(key, 'down');
-    setState('done');
+  const vote = (value: Vote) => {
+    if (mine === value) return apply(null);
+    if (value === 'down' && reasons?.length) { setAsking(true); return; }
+    apply(value);
   };
 
-  const btn = 'focus-ring inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-indigo-500 hover:text-indigo-600 dark:hover:text-cyan-400';
+  const btn = (on: boolean) => `focus-ring inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black border ${on
+    ? 'border-indigo-500 bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-cyan-300 dark:border-cyan-500'
+    : 'border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-indigo-500 hover:text-indigo-600 dark:hover:text-cyan-400'}`;
+  const count = (v: Vote) => (counts?.[v] ? <span className="tabular-nums">{counts[v]}</span> : null);
+
+  if (asking) {
+    return (
+      <div className="flex flex-wrap items-center gap-2 text-xs" aria-live="polite">
+        <span className="font-bold text-slate-700 dark:text-slate-300">{f.whyNot}</span>
+        {reasons!.map(([v, label]) => (
+          <button key={v} className={btn(false)} onClick={() => apply('down', v)}>{label}</button>
+        ))}
+      </div>
+    );
+  }
   return (
     <div className="flex flex-wrap items-center gap-2 text-xs" aria-live="polite">
-      {state === 'done' ? (
-        <span className="font-semibold text-muted">{f.thanks}</span>
-      ) : state === 'why' ? (
-        <>
-          <span className="font-bold text-slate-700 dark:text-slate-300">{f.whyNot}</span>
-          {reasons!.map(([v, label]) => (
-            <button key={v} className={btn} onClick={() => because(v)}>{label}</button>
-          ))}
-        </>
-      ) : (
-        <>
-          <span className="font-bold text-slate-700 dark:text-slate-300">{question}</span>
-          <button className={btn} onClick={() => vote('up')}><ThumbsUp className="w-3.5 h-3.5" /> {f.yes}</button>
-          <button className={btn} onClick={() => vote('down')}><ThumbsDown className="w-3.5 h-3.5" /> {f.no}</button>
-        </>
-      )}
+      <span className="font-bold text-slate-700 dark:text-slate-300">{question}</span>
+      <button className={btn(mine === 'up')} aria-pressed={mine === 'up'} onClick={() => vote('up')}>
+        <ThumbsUp className="w-3.5 h-3.5" /> {f.yes} {count('up')}
+      </button>
+      <button className={btn(mine === 'down')} aria-pressed={mine === 'down'} onClick={() => vote('down')}>
+        <ThumbsDown className="w-3.5 h-3.5" /> {f.no} {count('down')}
+      </button>
+      {mine && <span className="font-semibold text-muted">{f.thanks}</span>}
     </div>
   );
 };

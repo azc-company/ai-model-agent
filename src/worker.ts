@@ -658,7 +658,10 @@ async function handle(request: Request, env: Env, ctx: ExecutionContext): Promis
       if (!success) return new Response(null, { status: 429, headers: { 'Access-Control-Allow-Origin': '*' } });
       try {
         const row = parseFeedback(await request.json());
-        if (row) {
+        if (row?.value === 'clear') {
+          await env.DB.prepare('DELETE FROM feedback WHERE kind = ? AND target = ? AND session_id = ?')
+            .bind(row.kind, row.target, row.session_id).run();
+        } else if (row) {
           await env.DB.prepare(
             `INSERT INTO feedback (kind, target, value, note, session_id) VALUES (?, ?, ?, ?, ?)
              ON CONFLICT(kind, target, session_id) DO UPDATE SET value = excluded.value, note = excluded.note,
@@ -669,6 +672,21 @@ async function handle(request: Request, env: Env, ctx: ExecutionContext): Promis
         // 피드백 실패가 화면을 막으면 안 된다
       }
       return ok;
+    }
+
+    // 기사의 👍/👎 누적 수. 방금 누른 표가 바로 보여야 해서 캐시하지 않는다.
+    if (url.pathname === '/api/v1/feedback/counts' && request.method === 'GET') {
+      const target = url.searchParams.get('target') || '';
+      const counts = { up: 0, down: 0 };
+      if (/^[A-Za-z0-9-]{1,64}$/.test(target)) {
+        const { results } = await env.DB.prepare(
+          `SELECT value, COUNT(*) AS n FROM feedback WHERE kind = 'article_helpful' AND target = ? GROUP BY value`
+        ).bind(target).all<{ value: string; n: number }>();
+        for (const r of results) if (r.value === 'up' || r.value === 'down') counts[r.value] = r.n;
+      }
+      return new Response(JSON.stringify(counts), {
+        headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', 'Access-Control-Allow-Origin': '*' },
+      });
     }
 
     // ─── 어드민: 이용현황 요약 ──────────────────────────────────────────────

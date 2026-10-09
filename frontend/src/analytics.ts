@@ -94,6 +94,16 @@ export type FeedbackKind = 'model_error' | 'article_helpful' | 'advisor_helpful'
  * 내부 방문(?internal=1)은 방문 집계와 마찬가지로 보내지 않는다 — 운영 중 눌러 본 것이
  * 실제 신호에 섞이면 안 된다. 전송 성공 여부와 무관하게 화면은 "고맙다" 로 넘어간다.
  */
+/** 기사의 👍/👎 누적 수. 실패하면 null — 숫자 없이 버튼만 보인다. */
+export async function fetchFeedbackCounts(target: string): Promise<{ up: number; down: number } | null> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/feedback/counts?target=${encodeURIComponent(target)}`);
+    return res.ok ? await res.json() : null;
+  } catch {
+    return null;
+  }
+}
+
 export function sendFeedback(kind: FeedbackKind, target: string, value: string, note?: string): void {
   try {
     if (isExcluded()) return;

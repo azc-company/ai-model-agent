@@ -3,7 +3,8 @@
 // 이건 한 명만 눌러도 쓸모가 있는 신호다. 결과는 어드민에서만 본다.
 //
 //   model_error      모델 데이터가 틀렸다 (가격·컨텍스트·벤치마크·설명)
-//   article_helpful  기사가 도움이 됐나 — 기사 생성 품질로 되돌릴 신호
+//   article_helpful  기사가 도움이 됐나 — 기사 생성 품질로 되돌릴 신호. 누적 수는 기사에
+//                    공개한다(2026-10-09 결정, 0 일 때는 숨김)
 //   advisor_helpful  추천기 결과가 도움이 됐나 — 선택 규칙(가격 10배당 60점) 조정 근거
 //
 // 인증 없는 공개 엔드포인트라 받는 값을 좁게 검증한다. 자유 입력은 오류 신고의 짧은
@@ -26,11 +27,11 @@ const RULES: Record<FeedbackKind, { target: RegExp; values: ReadonlySet<string>;
   },
   article_helpful: {
     target: /^[A-Za-z0-9-]{1,64}$/,
-    values: new Set(['up', 'down']),
+    values: new Set(['up', 'down', 'clear']),      // clear = 내 표 취소
   },
   advisor_helpful: {
     target: /^[a-z_]{1,40}$/,                     // 쓴 LMArena 분야 (coding, longer_query …)
-    values: new Set(['up', 'down']),
+    values: new Set(['up', 'down', 'clear']),
     reasons: new Set(['cost', 'quality', 'models', 'other']),
   },
 };

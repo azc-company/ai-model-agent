@@ -33,6 +33,11 @@ describe('비공개 피드백 입력 검증', () => {
     expect(r!.note!.startsWith('a b c')).toBe(true);
   });
 
+  it('내 표 취소는 투표형에만 있다', () => {
+    expect(parseFeedback({ kind: 'article_helpful', target: 'x', value: 'clear', session_id: S })?.value).toBe('clear');
+    expect(parseFeedback({ kind: 'model_error', target: 'x', value: 'clear', session_id: S })).toBeNull();
+  });
+
   it('자유 입력은 오류 신고에만 있다', () => {
     expect(parseFeedback({ kind: 'article_helpful', target: 'x', value: 'down', note: '아무 말', session_id: S })!.note).toBeNull();
     // 추천기는 정해진 이유 중 하나만
