@@ -346,11 +346,17 @@ export interface TranslationDictionary {
     useRtx5090: string;
     useRtx4090: string;
     useRtx3090: string;
-    useM4Ultra: string;
+    useM5Ultra: string;
+    useM5Max: string;
+    useDgxSpark: string;
+    useDgxStation: string;
+    useRtxPro6000: string;
+    useB200: string;
+    useB300: string;
+    useStrixHalo: string;
     useMi300: string;
     formPcieWorkstation: string;
     formMacStudio: string;
-    nameM4Ultra: string;
   };
 }
 
@@ -701,11 +707,17 @@ export const translations: Record<Language, TranslationDictionary> = {
       useRtx5090: "로컬 7B~13B 모델 빠른 추론 · LoRA 파인튜닝 · ComfyUI 이미지 생성",
       useRtx4090: "7B 모델 로컬 추론 · 가성비 개인 AI 서버 · Stable Diffusion XL",
       useRtx3090: "중고 가성비 최강 · 13B 모델 로컬 서빙 · NVLink 듀얼로 48GB 구성",
-      useM4Ultra: "초저전력 70B 4-bit 로컬 추론 · macOS AI 개발환경 · 소음 없는 홈 AI 서버",
+      useM5Ultra: "Mac Studio 최대 512GB 통합메모리 · 1.2TB/s로 70B~400B급 MoE 로컬 추론 · 저소음 저전력 사내 AI 서버",
+      useM5Max: "128GB 통합메모리로 70B 4-bit 로컬 추론 · MLX 기반 macOS AI 개발 · 가성비 Apple 로컬 LLM",
+      useDgxSpark: "CUDA 그대로 쓰는 데스크톱 AI 개발박스 · 200B급 모델 로컬 프로토타이핑 · 대역폭(273GB/s)이 낮아 토큰 생성 속도는 제한적",
+      useDgxStation: "책상 위 GB300 슈퍼칩 · 784GB 코히런트 메모리로 1조 파라미터급 추론·파인튜닝 · 랙 없이 데이터센터급 성능",
+      useRtxPro6000: "96GB GDDR7 단일 카드로 70B FP8·120B 4-bit 서빙 · 워크스테이션/서버 겸용 · 클라우드 대여 가성비 우수",
+      useB200: "Blackwell 세대 대규모 학습·추론 표준 · FP4/FP8 고처리량 서빙 · H100 대비 2~3배 처리량",
+      useB300: "Blackwell Ultra 288GB HBM3e · 초장문 컨텍스트·추론(Reasoning) 모델 대규모 서빙 · FP4 특화(INT8 성능 축소)",
+      useStrixHalo: "128GB 통합메모리 미니PC · 70B 4-bit 로컬 추론 최저가 대안 · ROCm/Vulkan llama.cpp 활용",
       useMi300: "ROCm 기반 오픈소스 LLM 추론 · Ollama + llama.cpp 최적화 · 가성비 대용량 VRAM",
       formPcieWorkstation: "PCIe 4.0 (워크스테이션)",
-      formMacStudio: "Mac Studio (통합메모리)",
-      nameM4Ultra: "Apple M4 Ultra (128GB 통합메모리)"
+      formMacStudio: "Mac Studio (통합메모리)"
     }
   },
   en: {
@@ -1054,11 +1066,17 @@ export const translations: Record<Language, TranslationDictionary> = {
       useRtx5090: "Fast local inference for 7B–13B models · LoRA fine-tuning · ComfyUI image generation",
       useRtx4090: "Local 7B inference · cost-effective personal AI server · Stable Diffusion XL",
       useRtx3090: "Best value on the used market · local 13B serving · 48GB via dual NVLink",
-      useM4Ultra: "Ultra-low-power local 70B 4-bit inference · macOS AI development · silent home AI server",
+      useM5Ultra: "Up to 512GB unified memory at 1.2TB/s · local 70B–400B MoE inference · quiet, low-power in-house AI server",
+      useM5Max: "70B 4-bit local inference on 128GB unified memory · MLX-based macOS AI development · best-value Apple local LLM box",
+      useDgxSpark: "Desktop AI dev box with native CUDA · local prototyping of ~200B models · 273GB/s bandwidth limits token speed",
+      useDgxStation: "GB300 superchip on your desk · 784GB coherent memory for trillion-parameter inference and fine-tuning · datacenter power without a rack",
+      useRtxPro6000: "Serve 70B FP8 or 120B 4-bit on one 96GB GDDR7 card · workstation or server · strong cloud rental value",
+      useB200: "Blackwell-generation standard for large-scale training and inference · high-throughput FP4/FP8 serving · 2–3x H100 throughput",
+      useB300: "Blackwell Ultra with 288GB HBM3e · large-scale serving of long-context and reasoning models · FP4-focused (reduced INT8)",
+      useStrixHalo: "128GB unified-memory mini PC · cheapest path to local 70B 4-bit inference · llama.cpp on ROCm/Vulkan",
       useMi300: "Open-source LLM inference on ROCm · tuned for Ollama and llama.cpp · large VRAM at low cost",
       formPcieWorkstation: "PCIe 4.0 (workstation)",
-      formMacStudio: "Mac Studio (unified memory)",
-      nameM4Ultra: "Apple M4 Ultra (128GB unified memory)"
+      formMacStudio: "Mac Studio (unified memory)"
     }
   },
   ja: {
@@ -1407,11 +1425,17 @@ export const translations: Record<Language, TranslationDictionary> = {
       useRtx5090: "ローカルでの7B〜13Bモデル高速推論・LoRAファインチューニング・ComfyUI画像生成",
       useRtx4090: "7Bモデルのローカル推論・コスパの良い個人AIサーバー・Stable Diffusion XL",
       useRtx3090: "中古で最高のコスパ・13Bモデルのローカル配信・NVLinkデュアルで48GB構成",
-      useM4Ultra: "超低消費電力での70B 4bitローカル推論・macOS AI開発環境・静音ホームAIサーバー",
+      useM5Ultra: "最大512GBユニファイドメモリ・1.2TB/sで70B〜400B級MoEをローカル推論・静音低消費電力の社内AIサーバー",
+      useM5Max: "128GBユニファイドメモリで70B 4bitローカル推論・MLXベースのmacOS AI開発・コスパの高いApple製ローカルLLM",
+      useDgxSpark: "CUDAがそのまま使えるデスクトップAI開発機・200B級モデルのローカル試作・帯域幅273GB/sのため生成速度は限定的",
+      useDgxStation: "机上のGB300スーパーチップ・784GBコヒーレントメモリで1兆パラメータ級の推論/ファインチューニング・ラック不要のデータセンター級性能",
+      useRtxPro6000: "96GB GDDR7単体で70B FP8・120B 4bitを提供・ワークステーション/サーバー兼用・クラウドレンタルのコスパ良好",
+      useB200: "Blackwell世代の大規模学習・推論の標準・FP4/FP8高スループット提供・H100比2〜3倍のスループット",
+      useB300: "Blackwell Ultra 288GB HBM3e・長文コンテキスト/推論モデルの大規模提供・FP4特化(INT8性能は縮小)",
+      useStrixHalo: "128GBユニファイドメモリのミニPC・70B 4bitローカル推論の最安候補・ROCm/Vulkan版llama.cppを活用",
       useMi300: "ROCmベースのオープンソースLLM推論・Ollama + llama.cpp最適化・大容量VRAMを低コストで",
       formPcieWorkstation: "PCIe 4.0 (ワークステーション)",
-      formMacStudio: "Mac Studio (ユニファイドメモリ)",
-      nameM4Ultra: "Apple M4 Ultra (128GB ユニファイドメモリ)"
+      formMacStudio: "Mac Studio (ユニファイドメモリ)"
     }
   },
   zh: {
@@ -1760,11 +1784,17 @@ export const translations: Record<Language, TranslationDictionary> = {
       useRtx5090: "7B~13B 模型本地快速推理 · LoRA 微调 · ComfyUI 图像生成",
       useRtx4090: "7B 模型本地推理 · 高性价比个人 AI 服务器 · Stable Diffusion XL",
       useRtx3090: "二手市场性价比之王 · 本地服务 13B 模型 · NVLink 双卡组成 48GB",
-      useM4Ultra: "超低功耗本地 70B 4-bit 推理 · macOS AI 开发环境 · 静音家用 AI 服务器",
+      useM5Ultra: "最高 512GB 统一内存 · 1.2TB/s 本地运行 70B~400B 级 MoE · 安静低功耗的内部 AI 服务器",
+      useM5Max: "128GB 统一内存本地运行 70B 4-bit · 基于 MLX 的 macOS AI 开发 · 高性价比 Apple 本地 LLM",
+      useDgxSpark: "原生 CUDA 的桌面 AI 开发机 · 本地原型验证约 200B 模型 · 273GB/s 带宽限制生成速度",
+      useDgxStation: "桌面级 GB300 超级芯片 · 784GB 一致性内存支持万亿参数推理与微调 · 无需机架的数据中心级性能",
+      useRtxPro6000: "单卡 96GB GDDR7 可服务 70B FP8 或 120B 4-bit · 工作站/服务器两用 · 云租赁性价比高",
+      useB200: "Blackwell 代大规模训练与推理标准 · FP4/FP8 高吞吐服务 · 吞吐量约为 H100 的 2~3 倍",
+      useB300: "Blackwell Ultra 288GB HBM3e · 长上下文与推理模型大规模服务 · 专注 FP4(INT8 性能缩减)",
+      useStrixHalo: "128GB 统一内存迷你主机 · 本地 70B 4-bit 推理的最低价方案 · 基于 ROCm/Vulkan 的 llama.cpp",
       useMi300: "基于 ROCm 的开源 LLM 推理 · 针对 Ollama 与 llama.cpp 优化 · 低成本大显存",
       formPcieWorkstation: "PCIe 4.0（工作站）",
-      formMacStudio: "Mac Studio（统一内存）",
-      nameM4Ultra: "Apple M4 Ultra（128GB 统一内存）"
+      formMacStudio: "Mac Studio（统一内存）"
     }
   },
   es: {
@@ -2103,11 +2133,17 @@ export const translations: Record<Language, TranslationDictionary> = {
       useRtx5090: "Inferencia local rápida de modelos 7B-13B · ajuste fino LoRA · generación de imágenes con ComfyUI",
       useRtx4090: "Inferencia local de 7B · servidor de IA personal rentable · Stable Diffusion XL",
       useRtx3090: "La mejor relación calidad-precio de segunda mano · servicio local de 13B · 48 GB con NVLink dual",
-      useM4Ultra: "Inferencia local de 70B en 4 bits con consumo ultrabajo · desarrollo de IA en macOS · servidor doméstico silencioso",
+      useM5Ultra: "Hasta 512 GB de memoria unificada a 1,2 TB/s · inferencia local de MoE de 70B a 400B · servidor de IA interno silencioso y de bajo consumo",
+      useM5Max: "Inferencia local de 70B en 4 bits con 128 GB de memoria unificada · desarrollo de IA en macOS con MLX · LLM local de Apple con buena relación calidad-precio",
+      useDgxSpark: "Equipo de desarrollo de IA de escritorio con CUDA nativo · prototipado local de modelos de ~200B · el ancho de banda de 273 GB/s limita la velocidad",
+      useDgxStation: "Superchip GB300 en el escritorio · 784 GB de memoria coherente para inferencia y ajuste fino de billones de parámetros · potencia de centro de datos sin rack",
+      useRtxPro6000: "Sirve 70B en FP8 o 120B en 4 bits con una sola tarjeta GDDR7 de 96 GB · estación de trabajo o servidor · buen precio de alquiler en la nube",
+      useB200: "Estándar de la generación Blackwell para entrenamiento e inferencia a gran escala · servicio FP4/FP8 de alto rendimiento · 2-3x el rendimiento de H100",
+      useB300: "Blackwell Ultra con 288 GB HBM3e · servicio a gran escala de modelos de contexto largo y razonamiento · enfocado en FP4 (INT8 reducido)",
+      useStrixHalo: "Mini PC con 128 GB de memoria unificada · la opción más barata para inferencia local de 70B en 4 bits · llama.cpp con ROCm/Vulkan",
       useMi300: "Inferencia de LLM de código abierto sobre ROCm · optimizado para Ollama y llama.cpp · mucha VRAM a bajo coste",
       formPcieWorkstation: "PCIe 4.0 (estación de trabajo)",
-      formMacStudio: "Mac Studio (memoria unificada)",
-      nameM4Ultra: "Apple M4 Ultra (128 GB de memoria unificada)"
+      formMacStudio: "Mac Studio (memoria unificada)"
     }
   },
   de: {
@@ -2446,11 +2482,17 @@ export const translations: Record<Language, TranslationDictionary> = {
       useRtx5090: "Schnelle lokale Inferenz für 7B–13B-Modelle · LoRA-Feinabstimmung · ComfyUI-Bildgenerierung",
       useRtx4090: "Lokale 7B-Inferenz · kostengünstiger persönlicher KI-Server · Stable Diffusion XL",
       useRtx3090: "Bestes Preis-Leistungs-Verhältnis gebraucht · lokales 13B-Serving · 48 GB per Dual-NVLink",
-      useM4Ultra: "Stromsparende lokale 70B-4-Bit-Inferenz · KI-Entwicklung unter macOS · lautloser Heim-KI-Server",
+      useM5Ultra: "Bis zu 512 GB Unified Memory mit 1,2 TB/s · lokale Inferenz von 70B–400B-MoE-Modellen · leiser, sparsamer interner KI-Server",
+      useM5Max: "Lokale 70B-4-Bit-Inferenz mit 128 GB Unified Memory · KI-Entwicklung unter macOS mit MLX · preiswerte lokale LLM-Lösung von Apple",
+      useDgxSpark: "Desktop-KI-Entwicklungsbox mit nativem CUDA · lokales Prototyping von ~200B-Modellen · 273 GB/s Bandbreite begrenzt die Token-Geschwindigkeit",
+      useDgxStation: "GB300-Superchip auf dem Schreibtisch · 784 GB kohärenter Speicher für Billionen-Parameter-Inferenz und Feinabstimmung · Rechenzentrumsleistung ohne Rack",
+      useRtxPro6000: "70B in FP8 oder 120B in 4 Bit auf einer 96-GB-GDDR7-Karte · Workstation oder Server · günstig in der Cloud zu mieten",
+      useB200: "Blackwell-Standard für Training und Inferenz im großen Maßstab · FP4/FP8-Serving mit hohem Durchsatz · 2–3-facher H100-Durchsatz",
+      useB300: "Blackwell Ultra mit 288 GB HBM3e · großskaliges Serving von Long-Context- und Reasoning-Modellen · FP4-fokussiert (reduzierte INT8-Leistung)",
+      useStrixHalo: "Mini-PC mit 128 GB Unified Memory · günstigster Weg zu lokaler 70B-4-Bit-Inferenz · llama.cpp mit ROCm/Vulkan",
       useMi300: "Open-Source-LLM-Inferenz auf ROCm · optimiert für Ollama und llama.cpp · viel VRAM zu geringen Kosten",
       formPcieWorkstation: "PCIe 4.0 (Workstation)",
-      formMacStudio: "Mac Studio (Unified Memory)",
-      nameM4Ultra: "Apple M4 Ultra (128 GB Unified Memory)"
+      formMacStudio: "Mac Studio (Unified Memory)"
     }
   },
   fr: {
@@ -2789,11 +2831,17 @@ export const translations: Record<Language, TranslationDictionary> = {
       useRtx5090: "Inférence locale rapide de modèles 7B–13B · fine-tuning LoRA · génération d’images ComfyUI",
       useRtx4090: "Inférence locale 7B · serveur IA personnel économique · Stable Diffusion XL",
       useRtx3090: "Meilleur rapport qualité-prix en occasion · service local 13B · 48 Go via double NVLink",
-      useM4Ultra: "Inférence locale 70B 4 bits à très basse consommation · développement IA sous macOS · serveur IA domestique silencieux",
+      useM5Ultra: "Jusqu’à 512 Go de mémoire unifiée à 1,2 To/s · inférence locale de MoE 70B à 400B · serveur IA interne silencieux et sobre",
+      useM5Max: "Inférence locale 70B 4 bits avec 128 Go de mémoire unifiée · développement IA sous macOS avec MLX · LLM local Apple au meilleur rapport qualité-prix",
+      useDgxSpark: "Poste de développement IA de bureau avec CUDA natif · prototypage local de modèles ~200B · bande passante de 273 Go/s limitant la vitesse",
+      useDgxStation: "Superpuce GB300 sur le bureau · 784 Go de mémoire cohérente pour l’inférence et le fine-tuning à mille milliards de paramètres · puissance de datacenter sans baie",
+      useRtxPro6000: "Sert un 70B en FP8 ou un 120B en 4 bits sur une seule carte GDDR7 de 96 Go · station de travail ou serveur · location cloud avantageuse",
+      useB200: "Référence Blackwell pour l’entraînement et l’inférence à grande échelle · service FP4/FP8 à haut débit · 2 à 3x le débit du H100",
+      useB300: "Blackwell Ultra avec 288 Go HBM3e · service à grande échelle de modèles à long contexte et de raisonnement · orienté FP4 (INT8 réduit)",
+      useStrixHalo: "Mini PC à 128 Go de mémoire unifiée · solution la moins chère pour l’inférence locale 70B 4 bits · llama.cpp sur ROCm/Vulkan",
       useMi300: "Inférence de LLM open source sur ROCm · optimisé pour Ollama et llama.cpp · beaucoup de VRAM à bas coût",
       formPcieWorkstation: "PCIe 4.0 (station de travail)",
-      formMacStudio: "Mac Studio (mémoire unifiée)",
-      nameM4Ultra: "Apple M4 Ultra (128 Go de mémoire unifiée)"
+      formMacStudio: "Mac Studio (mémoire unifiée)"
     }
   }
 };

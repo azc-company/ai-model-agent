@@ -8,7 +8,7 @@
 - 실행: `cd frontend && npm run dev`
 - 테스트: `cd frontend && npm test · cd backend && python3 -m unittest`
 - 배포 명령: `npx wrangler deploy (루트) · 백엔드는 render.yaml 자동배포 [확인필요]`
-- 상태(2026-10-07): (기입)
+- 상태(2026-10-20): GPU 스펙&비용 탭에 DGX Spark·Blackwell(B200/B300, RTX PRO 6000, RTX 5090)·Apple M5 Mac Studio·Ryzen AI Max 추가, 전 장비 가격 2026-10 시세로 갱신 (데이터: frontend/src/api.ts fetchGPUSpecs)
 - 다음 할 일:
   1. (기입)
 
