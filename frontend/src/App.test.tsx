@@ -18,6 +18,16 @@ test('renders the application shell while data loads', () => {
   expect(screen.getByRole('navigation', { name: /^주요 메뉴$/i })).toBeInTheDocument();
 });
 
+// 첫 화면은 AI 트렌드 뉴스 — ?tab= 없이 들어오면 뉴스 탭이 열린다 (2026-11-09 결정)
+test('주소에 tab 이 없으면 AI 트렌드 뉴스 탭이 첫 화면이다', () => {
+  localStorage.setItem('llm_compass_lang', 'ko');
+  window.history.replaceState({}, '', '/');
+
+  render(<App />);
+  const nav = screen.getByRole('navigation', { name: /^주요 메뉴$/i });
+  expect(within(nav).getByRole('button', { name: /AI 트렌드 뉴스/ })).toHaveAttribute('aria-current', 'page');
+});
+
 // 검색어 원문이 서버로 새는 걸 막는 게이트 — 자유 입력이라 PII 가 섞일 수 있다.
 const MODELS = [{ name: 'Claude Opus 4.5', provider_name: 'Anthropic' }] as never;
 const PROVIDERS = [{ name: 'OpenAI' }] as never;

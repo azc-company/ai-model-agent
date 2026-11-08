@@ -5,7 +5,7 @@ import { fetchModels, fetchProviders } from './api';
 import { LanguageProvider, useLanguage } from './context/LanguageContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { AppShell } from './components/AppShell';
-import { isAppTab, type AppTab } from './navigation/navigationConfig';
+import { DEFAULT_TAB, isAppTab, type AppTab } from './navigation/navigationConfig';
 import { track } from './analytics';
 
 const Dashboard = lazy(() => import('./components/Dashboard').then((module) => ({ default: module.Dashboard })));
@@ -38,7 +38,7 @@ export const AppContent: React.FC = () => {
     if (isAppTab(tabParam)) {
       return tabParam;
     }
-    return 'dashboard';
+    return DEFAULT_TAB;
   };
 
   const [activeTab, setActiveTabState] = useState<AppTab>(getInitialTab);
@@ -98,7 +98,7 @@ export const AppContent: React.FC = () => {
     const handlePopState = () => {
       const params = new URLSearchParams(window.location.search);
       const tabParam = params.get('tab');
-      setActiveTabState(isAppTab(tabParam) ? tabParam : 'dashboard');
+      setActiveTabState(isAppTab(tabParam) ? tabParam : DEFAULT_TAB);
     };
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);

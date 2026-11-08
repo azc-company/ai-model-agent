@@ -80,6 +80,9 @@ export const NAV_GROUPS: NavGroup[] = [
   },
 ];
 
+/** 주소에 ?tab= 이 없을 때 여는 첫 화면 — AI 트렌드 뉴스(2026-11-09 사용자 결정) */
+export const DEFAULT_TAB: AppTab = 'news';
+
 export const MOBILE_PRIMARY_TABS: AppTab[] = ['dashboard', 'compare', 'news', 'tco'];
 
 export const isAppTab = (value: string | null): value is AppTab =>
