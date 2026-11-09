@@ -73,6 +73,23 @@ class ValidationTest(unittest.TestCase):
         numbers = [{"label": "Users", "value": "1 million"}, {"label": "Teams", "value": "90"}]
         self.assertIn("value changed", self.check(key_numbers=numbers))
 
+    def check_number(self, source_value, translated_value):
+        row = {**ROW, "key_numbers": json.dumps([{"label": "수치", "value": source_value, "source_url": "u"}], ensure_ascii=False)}
+        return ta.validation_error(ta.build_payload(row), {**good(), "key_numbers": [{"label": "Figure", "value": translated_value}]})
+
+    def test_reordered_numbers_are_allowed(self):
+        self.assertIsNone(self.check_number("1시간 오디오당 20~40초", "20-40 seconds per 1 hour of audio"))
+
+    def test_month_names_are_allowed(self):
+        self.assertIsNone(self.check_number("2023년 6월", "June 2023"))
+
+    def test_thousands_separator_is_ignored(self):
+        self.assertIsNone(self.check_number("1,600개", "1600"))
+
+    def test_empty_source_takeaway_may_stay_empty(self):
+        row = {**ROW, "key_takeaways": json.dumps(["요약", "개발자", "PM", "비즈니스", ""], ensure_ascii=False)}
+        self.assertIsNone(ta.validation_error(ta.build_payload(row), {**good(), "key_takeaways": ["S", "D", "P", "B", ""]}))
+
     def test_korean_unit_conversion_is_allowed(self):
         self.assertIsNone(self.check(key_numbers=[{"label": "Users", "value": "1 million"}, {"label": "Teams", "value": "9 teams"}]))
 

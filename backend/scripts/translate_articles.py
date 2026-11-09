@@ -111,6 +111,11 @@ def _flatten(value) -> str:
     return str(value or "")
 
 
+def _numbers(value) -> list:
+    """어순이 바뀌어도 같은 수치인지 보도록 정렬한다 (20~40초/1시간 → 1 hour, 20-40 seconds)."""
+    return sorted(re.findall(r"\d+(?:\.\d+)?", str(value).replace(",", "")))
+
+
 def validation_error(src: dict, out) -> str | None:
     """번역을 저장하면 안 되는 이유. 문제없으면 None."""
     if not isinstance(out, dict):
@@ -124,11 +129,11 @@ def validation_error(src: dict, out) -> str | None:
                 if not all(isinstance(g, dict) and g.get("label") and g.get("value") for g in got):
                     return "key_numbers: empty item"
                 for a, b in zip(value, got):
-                    # shortcut: 만·억·조 단위는 자릿수가 바뀌어 비교를 건너뛴다. 오역이 나오면 단위 환산 비교로.
-                    if not re.search("[천만억조]", a["value"]) and re.findall(r"\d", a["value"]) != re.findall(r"\d", str(b["value"])):
+                    # shortcut: 만·억·조 단위와 월 이름(6월 → June)은 숫자 표기가 바뀌어 비교를 건너뛴다. 오역이 나오면 단위 환산 비교로.
+                    if not re.search("[천만억조월]", a["value"]) and _numbers(a["value"]) != _numbers(b["value"]):
                         return f"key_numbers: value changed ({a['value']})"
-            elif not all(isinstance(g, str) and g.strip() for g in got):
-                return f"{key}: empty item"
+            elif any(str(s).strip() and not (isinstance(g, str) and g.strip()) for s, g in zip(value, got)):
+                return f"{key}: empty item"                # 원문부터 빈 칸(연구자 팁 없음)은 비어 있어도 된다
         elif value and not (isinstance(got, str) and got.strip()):
             return f"{key}: empty"
     if HANGUL.search(str(out["title"])):
