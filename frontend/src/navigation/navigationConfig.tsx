@@ -51,6 +51,15 @@ export interface NavGroup {
 
 export const NAV_GROUPS: NavGroup[] = [
   {
+    id: 'insights',
+    labelKey: 'groupInsights',
+    items: [
+      { id: 'news', labelKey: 'news', icon: Newspaper, badge: 'new' },
+      { id: 'advisor', labelKey: 'advisor', icon: Sparkles },
+      { id: 'tutorial', labelKey: 'tutorial', icon: BookOpen },
+    ],
+  },
+  {
     id: 'catalog',
     labelKey: 'groupCatalog',
     items: [
@@ -69,21 +78,12 @@ export const NAV_GROUPS: NavGroup[] = [
       { id: 'gpus', labelKey: 'gpus', icon: Cpu },
     ],
   },
-  {
-    id: 'insights',
-    labelKey: 'groupInsights',
-    items: [
-      { id: 'advisor', labelKey: 'advisor', icon: Sparkles },
-      { id: 'news', labelKey: 'news', icon: Newspaper, badge: 'new' },
-      { id: 'tutorial', labelKey: 'tutorial', icon: BookOpen },
-    ],
-  },
 ];
 
 /** 주소에 ?tab= 이 없을 때 여는 첫 화면 — AI 트렌드 뉴스(2026-11-09 사용자 결정) */
 export const DEFAULT_TAB: AppTab = 'news';
 
-export const MOBILE_PRIMARY_TABS: AppTab[] = ['dashboard', 'compare', 'news', 'tco'];
+export const MOBILE_PRIMARY_TABS: AppTab[] = ['news', 'dashboard', 'compare', 'tco'];
 
 export const isAppTab = (value: string | null): value is AppTab =>
   NAV_GROUPS.some((group) => group.items.some((item) => item.id === value));
