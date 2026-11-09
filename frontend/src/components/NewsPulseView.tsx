@@ -438,13 +438,13 @@ export default function NewsPulseView() {
     if (selectedArticle.blog_summary !== undefined) { setFullArticle(selectedArticle); return; }
     let alive = true;
     setFullArticle(null);
-    fetch(`${API_BASE_URL}/news/articles/${encodeURIComponent(selectedArticle.id)}`)
+    fetch(`${API_BASE_URL}/news/articles/${encodeURIComponent(selectedArticle.id)}?lang=${language}`)
       .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
       .then((full) => { if (alive) setFullArticle({ ...selectedArticle, ...full }); })
       // 본문을 못 받아도 목록 정보(요약·팁)로 상세를 연다. NewsDetailView 가 그 경우를 그린다.
       .catch(() => { if (alive) setFullArticle(selectedArticle); });
     return () => { alive = false; };
-  }, [selectedArticle]);
+  }, [selectedArticle, language]);
 
   // 서브 렌즈 탭 클릭 시 주소창 URL 자동 동기화 (북마크/즐겨찾기/공유 가능)
   const setActiveLens = (lens: string) => {
@@ -528,9 +528,9 @@ export default function NewsPulseView() {
 
     try {
       const url = (lens === 'all' || lens === 'new')
-        ? `${API_BASE_URL}/news/pulse`
-        : `${API_BASE_URL}/news/pulse?lens=${lens}`;
-      
+        ? `${API_BASE_URL}/news/pulse?lang=${language}`
+        : `${API_BASE_URL}/news/pulse?lens=${lens}&lang=${language}`;
+
       const res = await fetch(url, { signal: controller.signal });
       clearTimeout(timeoutId);
 
@@ -554,7 +554,7 @@ export default function NewsPulseView() {
 
   useEffect(() => {
     fetchNews(activeLens);
-  }, [activeLens]);
+  }, [activeLens, language]);
 
   useEffect(() => {
     fetchChangelog().then((rows) => {

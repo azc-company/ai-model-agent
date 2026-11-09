@@ -22,5 +22,7 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src"]
+  "include": ["src"],
+  // Worker 코드를 끌어들인다. Worker 타입(D1Database 등)은 이 설정에 없어 빌드가 깨진다.
+  "exclude": ["src/articleI18n.test.ts"]
 }

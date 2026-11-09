@@ -93,12 +93,17 @@ footer a{color:var(--accent)}
 interface PageOpts {
   lang: Lang; title: string; description: string; path: string;
   jsonLd?: object; body: string; image?: string; noindex?: boolean;
+  /** 본문이 실제로 있는 언어만. 기본은 전 언어(UI·설명이 번역된 페이지). */
+  alternates?: readonly string[];
+  /** 번역본 페이지는 자기 주소가 표준이다. 원문을 가리키면 중복으로 묶여 색인되지 않는다. */
+  canonicalLang?: Lang;
 }
 
 function shell(o: PageOpts): string {
-  const canonical = `${SITE}${o.path}`;
-  const alts = LANGS.map((l) =>
-    `<link rel="alternate" hreflang="${l}" href="${esc(canonical)}${canonical.includes('?') ? '&' : '?'}lang=${l}">`
+  const base = `${SITE}${o.path}`;
+  const canonical = o.canonicalLang ? `${base}?lang=${o.canonicalLang}` : base;
+  const alts = (o.alternates ?? LANGS).map((l) =>
+    `<link rel="alternate" hreflang="${l}" href="${esc(base)}${base.includes('?') ? '&' : '?'}lang=${l}">`
   ).join('\n    ');
   return `<!doctype html>
 <html lang="${o.lang}">
@@ -111,7 +116,7 @@ function shell(o: PageOpts): string {
     ${o.noindex ? '<meta name="robots" content="noindex, follow">' : ''}
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     ${alts}
-    <link rel="alternate" hreflang="x-default" href="${esc(canonical)}">
+    <link rel="alternate" hreflang="x-default" href="${esc(base)}">
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="LLM COMPASS">
     <meta property="og:title" content="${esc(o.title)}">
@@ -331,8 +336,10 @@ function renderBody(md: string): string {
   return out.join('\n    ');
 }
 
-export function newsPage(n: any, lang: Lang): string {
-  const t = T[lang];
+export function newsPage(n: any, lang: Lang, translatedLangs: readonly string[] = []): string {
+  // 번역이 없는 언어로 들어오면 본문은 한국어다. 페이지 언어·표준 주소도 원문으로 둔다.
+  const hasTranslation = translatedLangs.includes(lang);
+  const t = T[hasTranslation ? lang : 'ko'];
   const takeaways: string[] = json(n.key_takeaways, []);
   const sources: any[] = json(n.original_sources, []);
   const summary = (Array.isArray(takeaways) && takeaways[0]) || n.executive_summary || n.title;
@@ -349,7 +356,7 @@ export function newsPage(n: any, lang: Lang): string {
     <p class="lede">${esc(summary)}</p>
     <article>${paragraphs}</article>
     ${numbers.length ? `<h2>${esc(t.figures)}</h2><div class="numbers"><ul>${numbers.map((k: any) =>
-      `<li>${esc(k.label)} — <b>${esc(k.value)}</b> <a href="${esc(k.source_url)}" rel="nofollow noopener">출처</a></li>`).join('')}</ul></div>` : ''}
+      `<li>${esc(k.label)} — <b>${esc(k.value)}</b> <a href="${esc(k.source_url)}" rel="nofollow noopener">${esc(t.source)}</a></li>`).join('')}</ul></div>` : ''}
     ${n.our_take ? `<div class="take"><h2>${esc(t.ourTake)}</h2><p>${esc(n.our_take)}</p></div>` : ''}
     ${openQ.length ? `<div class="openq"><h2>${esc(t.openQ)}</h2><ul>${openQ.map((q: string) =>
       `<li>${esc(q)}</li>`).join('')}</ul></div>` : ''}
@@ -366,7 +373,9 @@ export function newsPage(n: any, lang: Lang): string {
     <footer>${esc(t.updated)}: ${esc((n.created_at || '').slice(0, 10))} · <a href="/sitemap.xml">sitemap</a></footer>`;
 
   return shell({
-    lang, path: `/news/${n.id}`, body,
+    lang: hasTranslation ? lang : 'ko', path: `/news/${n.id}`, body,
+    alternates: ['ko', ...translatedLangs],
+    canonicalLang: hasTranslation ? lang : undefined,
     title: `${n.title} | LLM COMPASS`,
     description: String(summary).slice(0, 300),
     image: n.image_url || undefined,
@@ -463,13 +472,16 @@ export function changelogIndex(rows: any[], lang: Lang): string {
   });
 }
 
-export function sitemap(modelIds: string[], newsIds: string[], changelogIds: string[] = []): string {
+export function sitemap(
+  modelIds: string[], newsIds: string[], changelogIds: string[] = [],
+  newsLangs: Record<string, string[]> = {},
+): string {
   const urls: string[] = [];
-  const push = (loc: string, priority: string, freq: string) => {
+  const push = (loc: string, priority: string, freq: string, langs: readonly string[] = LANGS) => {
     // 탭 URL 은 이미 ?tab=... 을 달고 있다. 무조건 '?' 를 붙이면
     // "?tab=dashboard?lang=ko" 같은 무효 URL 이 나와 GSC 가 hreflang 오류로 잡는다.
     const sep = loc.includes('?') ? '&amp;' : '?';
-    const alts = LANGS.map((l) =>
+    const alts = langs.map((l) =>
       `<xhtml:link rel="alternate" hreflang="${l}" href="${SITE}${loc}${sep}lang=${l}"/>`).join('');
     // 언어를 지정하지 않은 방문자가 어디로 가야 하는지 검색엔진에 알린다.
     const xDefault = `<xhtml:link rel="alternate" hreflang="x-default" href="${SITE}${loc}"/>`;
@@ -482,7 +494,7 @@ export function sitemap(modelIds: string[], newsIds: string[], changelogIds: str
   // "중복 페이지, Google이 다른 표준 페이지 선택" 으로 잡는다. 크롤링 예산도
   // 낭비된다. 홈의 <nav> 링크로 발견되고 canonical 로 홈에 합쳐지면 충분하다.
   for (const id of modelIds) push(`/models/${id}`, '0.8', 'weekly');
-  for (const id of newsIds) push(`/news/${id}`, '0.6', 'monthly');
+  for (const id of newsIds) push(`/news/${id}`, '0.6', 'monthly', ['ko', ...(newsLangs[id] ?? [])]);
   if (changelogIds.length) push('/changelog', '0.7', 'weekly');
   for (const id of changelogIds) push(`/changelog/${id}`, '0.5', 'monthly');
   return `<?xml version="1.0" encoding="UTF-8"?>

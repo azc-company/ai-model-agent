@@ -65,4 +65,5 @@ gen-lang-client-*.json
 seed_models_batch.sql
 seed_benchmarks.sql
 seed_changelog.sql
+seed_article_i18n.sql
 provider_endpoints.sql

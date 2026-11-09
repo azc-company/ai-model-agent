@@ -190,7 +190,19 @@ function safeJson<T>(v: unknown, fallback: T): T {
   try { return JSON.parse(v || 'null') ?? fallback; } catch { return fallback; }
 }
 
-export function buildArticle(n: any) {
+const TRANSLATED_FIELDS = ['title', 'report_type', 'executive_summary', 'analytical_deep_dive',
+  'key_takeaways', 'key_numbers', 'our_take', 'open_questions', 'tags'];
+
+/** 번역본의 비어 있지 않은 필드만 원문 위에 덮는다. 없는 필드는 한국어 원문으로 남는다. */
+export function withTranslation(row: any, translation?: any) {
+  if (!translation) return row;
+  const out = { ...row };
+  for (const k of TRANSLATED_FIELDS) if (translation[k]) out[k] = translation[k];
+  return out;
+}
+
+export function buildArticle(original: any, translation?: any) {
+  const n = withTranslation(original, translation);
   let takeaways: any[] = [];
   let sources: any[] = [];
   let tags = ["#AITrend", "#DeepSeek", "#Anthropic", "#SOTA"];
@@ -200,8 +212,10 @@ export function buildArticle(n: any) {
   if (n.tags) { try { tags = JSON.parse(n.tags); } catch {} }
 
   // ✅ 항상 실시간 재분류 (DB 저장 렌즈 무시 → 탭 중복 방지)
-  const summaryText = (Array.isArray(takeaways) ? takeaways.join(' ') : (typeof takeaways === 'string' ? takeaways : '')) || n.executive_summary || '';
-  const matched_lenses = classifyLenses(n.title || '', summaryText, sources[0]?.title || '', n.report_type || '');
+  // 키워드가 한국어 원문 기준이라 원문으로 판정한다. 번역본으로 하면 언어별로 탭 구성이 달라진다.
+  const sourceTakeaways = safeJson<any>(original.key_takeaways, []);
+  const summaryText = (Array.isArray(sourceTakeaways) ? sourceTakeaways.join(' ') : (typeof sourceTakeaways === 'string' ? sourceTakeaways : '')) || original.executive_summary || '';
+  const matched_lenses = classifyLenses(original.title || '', summaryText, sources[0]?.title || '', original.report_type || '');
 
   // 교차 검증된 기사인지는 실제로 묶인 출처 수로만 판단한다. 제목 문자열 추측이나
   // 존재하지 않는 is_synthesized 컬럼을 보던 분기는 전부 참이 되어 배지가 무의미했다.
@@ -254,6 +268,14 @@ function localizedDescription(m: any, lang: string): string {
     if (typeof picked === 'string' && picked.trim()) return picked;
   } catch {}
   return m.description || '';
+}
+
+const wantsTranslation = (lang: string | null): lang is string =>
+  !!lang && lang !== 'ko' && SUPPORTED_LANGS.has(lang);
+
+// 번역은 부가 기능이다. 조회가 실패해도(테이블 미적용 포함) 첫 화면인 기사 목록은 한국어로 나가야 한다.
+async function queryTranslations(run: () => Promise<{ results: any[] }>): Promise<any[]> {
+  try { return (await run()).results; } catch (err) { Sentry.captureException(err); return []; }
 }
 
 export default Sentry.withSentry(
@@ -390,7 +412,13 @@ async function handle(request: Request, env: Env, ctx: ExecutionContext): Promis
       } else {
         row.mentioned_models = [];
       }
-      return new Response(seo.newsPage(row, seo.pickLang(url.searchParams.get('lang'))), { headers: HTML });
+      const lang = seo.pickLang(url.searchParams.get('lang'));
+      const translations = await queryTranslations(() =>
+        env.DB.prepare('SELECT * FROM trend_news_i18n WHERE news_id = ?').bind(id).all());
+      return new Response(
+        seo.newsPage(withTranslation(row, translations.find((t) => t.lang === lang)), lang, translations.map((t) => t.lang)),
+        { headers: HTML },
+      );
     }
 
     if (url.pathname === '/changelog' || url.pathname === '/changelog/') {
@@ -408,15 +436,19 @@ async function handle(request: Request, env: Env, ctx: ExecutionContext): Promis
     }
 
     if (url.pathname === '/sitemap.xml') {
-      const [m, n, c] = await Promise.all([
+      const [m, n, c, translated] = await Promise.all([
         env.DB.prepare('SELECT id FROM models WHERE is_deprecated = 0 ORDER BY is_verified DESC, name ASC').all(),
         env.DB.prepare('SELECT id FROM trend_news ORDER BY created_at DESC').all(),
         env.DB.prepare('SELECT id FROM changelog ORDER BY period_end DESC').all(),
+        queryTranslations(() => env.DB.prepare('SELECT news_id, lang FROM trend_news_i18n').all()),
       ]);
+      const newsLangs: Record<string, string[]> = {};
+      for (const t of translated) (newsLangs[t.news_id] ??= []).push(t.lang);
       const body = seo.sitemap(
         m.results.map((r: any) => r.id),
         n.results.map((r: any) => r.id),
         c.results.map((r: any) => r.id),
+        newsLangs,
       );
       return new Response(body, {
         headers: { 'Content-Type': 'application/xml; charset=utf-8', 'Cache-Control': 'public, max-age=600, s-maxage=3600' },
@@ -887,13 +919,19 @@ async function handle(request: Request, env: Env, ctx: ExecutionContext): Promis
       try {
         const targetLens = url.searchParams.get('lens');
         const { results } = await env.DB.prepare('SELECT * FROM trend_news ORDER BY created_at DESC').all();
+        const lang = url.searchParams.get('lang');
+        const translated = new Map(wantsTranslation(lang)
+          ? (await queryTranslations(() => env.DB.prepare(
+              'SELECT news_id, title, report_type, executive_summary, key_takeaways, tags FROM trend_news_i18n WHERE lang = ?'
+            ).bind(lang).all())).map((t) => [t.news_id, t])
+          : []);
 
         // 목록에는 카드에 그리는 것만 싣는다. 예전에는 421건 전체의 본문까지 실어 원본 4.25MB
         // (압축 1MB)였고 본문이 62% 였다. 기사가 하루 8건씩 늘어 계속 커졌다. 본문·수치·의견은
         // 기사를 열 때 /api/v1/news/articles/:id 로 받는다. (key_numbers·our_take·open_questions
         // 는 SPA 가 목록에서 쓰지 않는다.)
         let articles = results.map((n: any) => {
-          const card: any = buildArticle(n);
+          const card: any = buildArticle(n, translated.get(n.id));
           for (const k of ['blog_summary', 'key_numbers', 'our_take', 'open_questions']) delete card[k];
           return card;
         });
@@ -933,7 +971,13 @@ async function handle(request: Request, env: Env, ctx: ExecutionContext): Promis
           });
         }
 
-        const article: any = buildArticle(n);
+        const lang = url.searchParams.get('lang');
+        const translation = wantsTranslation(lang)
+          ? (await queryTranslations(() => env.DB.prepare(
+              'SELECT * FROM trend_news_i18n WHERE news_id = ? AND lang = ?'
+            ).bind(articleId, lang).all()))[0]
+          : undefined;
+        const article: any = buildArticle(n, translation);
 
         // 기사에 언급된 모델의 가격·벤치마크를 조회 시점에 붙인다. 기사 작성 시점에
         // 얼려두면 주간 동기화 뒤 틀린 값이 된다. 생성이 아니라 조회이므로 환각이 없다.

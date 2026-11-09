@@ -82,6 +82,28 @@ CREATE TABLE IF NOT EXISTS trend_news (
   mentioned_models TEXT  -- JSON: ["gpt-4o", ...]
 );
 
+-- 기사 번역본. models.description_i18n 처럼 컬럼에 담지 않는 이유: /news/pulse 가
+-- trend_news 전체를 SELECT * 로 읽어, 본문 번역까지 매번 메모리에 올리게 된다.
+-- 언어 하나가 없거나 일부 필드가 비면 Worker 가 한국어 원문으로 대체한다.
+-- source_hash 는 번역 당시 원문의 지문이다. 기사가 재생성되면 달라져 다시 번역된다.
+CREATE TABLE IF NOT EXISTS trend_news_i18n (
+  news_id TEXT NOT NULL,
+  lang TEXT NOT NULL,
+  title TEXT NOT NULL,
+  report_type TEXT,
+  executive_summary TEXT,
+  analytical_deep_dive TEXT,
+  key_takeaways TEXT,   -- JSON: 원문과 같은 길이·순서 (Worker 가 위치로 역할별 팁을 고른다)
+  key_numbers TEXT,     -- JSON: source_url 은 원문 값을 그대로 복사한다
+  our_take TEXT,
+  open_questions TEXT,  -- JSON
+  tags TEXT,            -- JSON
+  source_hash TEXT NOT NULL,
+  translated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (news_id, lang)
+);
+CREATE INDEX IF NOT EXISTS idx_trend_news_i18n_lang ON trend_news_i18n(lang);
+
 CREATE INDEX IF NOT EXISTS idx_models_provider ON models(provider_id);
 CREATE INDEX IF NOT EXISTS idx_models_tier ON models(tier);
 CREATE INDEX IF NOT EXISTS idx_models_is_open ON models(is_open_weight);

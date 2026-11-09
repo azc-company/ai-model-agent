@@ -1,0 +1,53 @@
+name: 🌍 Article Translation
+
+# 기사 번역. 뉴스 배치와 분리해 번역 실패가 기사 발행을 막지 않게 한다.
+# 스케줄 대신 배치 종료에 잇는다 — 뉴스 배치의 cron 은 실제로 2~3시간씩 밀려 돈다.
+# 한 번에 100건까지 처리하고 밀린 분량은 다음 실행이 잇는다.
+
+on:
+  workflow_run:
+    workflows: ["📰 Daily AI News D1 Batch Collector"]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: '처리할 기사 수'
+        required: false
+        default: '100'
+        type: string
+
+jobs:
+  translate:
+    runs-on: ubuntu-latest
+    # 100건 × 약 40초 ÷ 동시 4건 ≈ 17분. 여유를 둔다.
+    timeout-minutes: 45
+    steps:
+      - name: 📦 저장소 체크아웃
+        uses: actions/checkout@v4
+
+      - name: 🐍 Python 환경 설정
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 🌍 번역 생성
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          LITELLM_API_KEY: ${{ secrets.LITELLM_API_KEY }}
+          LITELLM_MODEL: openai/gpt-4o-mini
+          LIMIT: ${{ inputs.limit || '100' }}
+        run: |
+          npm install -g wrangler
+          python3 backend/scripts/translate_articles.py --lang en --days 30 --limit "$LIMIT"
+
+      - name: ☁️ D1 반영
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          if [ -s seed_article_i18n.sql ]; then
+            npx wrangler d1 execute llm-compass-db --remote --file=seed_article_i18n.sql
+          else
+            echo "ℹ️ 새로 번역한 기사 없음"
+          fi
