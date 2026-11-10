@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { Newspaper, Users, Lightbulb, Briefcase, Microscope, Activity, Hash, Clock, RefreshCw, Search, X, Sparkles } from 'lucide-react';
 import { API_BASE_URL } from '../api';
 import { useLanguage } from '../context/LanguageContext';
@@ -446,6 +446,20 @@ export default function NewsPulseView() {
     return () => { alive = false; };
   }, [selectedArticle, language]);
 
+  // 상세를 닫으면 목록의 보던 위치로 돌아간다. 화면에 그려지기 전에 옮겨야 맨 위가 번쩍 보이지 않는다.
+  // 공유 링크로 상세부터 열었다면 저장된 위치가 없어 맨 위(0)로 간다.
+  const listScrollY = useRef(0);
+  const detailWasOpen = useRef(false);
+  useLayoutEffect(() => {
+    if (selectedArticle) {
+      detailWasOpen.current = true;
+    } else if (detailWasOpen.current) {
+      detailWasOpen.current = false;
+      window.scrollTo(0, listScrollY.current);
+      listScrollY.current = 0;
+    }
+  }, [selectedArticle]);
+
   // 서브 렌즈 탭 클릭 시 주소창 URL 자동 동기화 (북마크/즐겨찾기/공유 가능)
   const setActiveLens = (lens: string) => {
     setActiveLensState(lens);
@@ -458,6 +472,7 @@ export default function NewsPulseView() {
   // 🔗 기사 상세 페이지 라우트 선택 및 URL 파라미터 동기화 (공유/북마크 지원)
   const handleSelectArticle = (article: NewsArticle) => {
     track('news_open', { label: article.title });
+    listScrollY.current = window.scrollY;
     setSelectedArticle(article);
     const url = new URL(window.location.href);
     url.searchParams.set('tab', 'news');
@@ -470,7 +485,6 @@ export default function NewsPulseView() {
     const url = new URL(window.location.href);
     url.searchParams.delete('article');
     window.history.pushState({}, '', url.toString());
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   // API 데이터 로드 완료 시 갱신
