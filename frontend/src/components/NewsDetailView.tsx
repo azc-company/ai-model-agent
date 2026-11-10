@@ -677,7 +677,7 @@ export function NewsDetailView({ article, t, onBack }: NewsDetailViewProps) {
             onClick={onBack}
             className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-bold text-blue-600 hover:text-blue-700 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/50 px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-xl transition-all"
           >
-            <ArrowLeft className="w-4 h-4" /> 목록으로 돌아가기
+            <ArrowLeft className="w-4 h-4" /> {tr.nav.backToList}
           </button>
 
           <div className="flex items-center gap-2 sm:gap-3">
@@ -850,7 +850,7 @@ export function NewsDetailView({ article, t, onBack }: NewsDetailViewProps) {
               onClick={onBack}
               className="px-5 py-3 text-sm font-extrabold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition-all flex items-center gap-2"
             >
-              <ArrowLeft className="w-4 h-4" /> 목록으로 돌아가기
+              <ArrowLeft className="w-4 h-4" /> {tr.nav.backToList}
             </button>
 
             <NewsSources sources={article.multi_sources} fallbackUrl={article.source_url} fallbackLabel={t?.readOriginal || '원문 기사 전문 보러가기'} />

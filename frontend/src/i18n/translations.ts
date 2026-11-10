@@ -25,6 +25,7 @@ export interface TranslationDictionary {
     updates: string;
     whatsNew: string;
     viewUpdate: string;
+    backToList: string;
   };
   viewMode: {
     grid: string;
@@ -385,7 +386,8 @@ export const translations: Record<Language, TranslationDictionary> = {
       loadingView: "화면 불러오는 중",
       updates: "업데이트 노트",
       whatsNew: "새로워진 점",
-      viewUpdate: "자세히 보기"
+      viewUpdate: "자세히 보기",
+      backToList: "목록으로 돌아가기",
     },
     viewMode: {
       grid: "카드 뷰",
@@ -744,7 +746,8 @@ export const translations: Record<Language, TranslationDictionary> = {
       loadingView: "Loading view",
       updates: "Update notes",
       whatsNew: "What's new",
-      viewUpdate: "Read more"
+      viewUpdate: "Read more",
+      backToList: "Back to list",
     },
     viewMode: {
       grid: "Card View",
@@ -1103,7 +1106,8 @@ export const translations: Record<Language, TranslationDictionary> = {
       loadingView: "画面を読み込み中",
       updates: "アップデートノート",
       whatsNew: "新着情報",
-      viewUpdate: "詳細を見る"
+      viewUpdate: "詳細を見る",
+      backToList: "一覧に戻る",
     },
     viewMode: {
       grid: "カード表示",
@@ -1462,7 +1466,8 @@ export const translations: Record<Language, TranslationDictionary> = {
       loadingView: "正在加载页面",
       updates: "更新说明",
       whatsNew: "最新动态",
-      viewUpdate: "查看详情"
+      viewUpdate: "查看详情",
+      backToList: "返回列表",
     },
     viewMode: {
       grid: "卡片视图",
@@ -1821,7 +1826,8 @@ export const translations: Record<Language, TranslationDictionary> = {
       loadingView: "Cargando la vista",
       updates: "Notas de actualización",
       whatsNew: "Novedades",
-      viewUpdate: "Ver más"
+      viewUpdate: "Ver más",
+      backToList: "Volver a la lista",
     },
     viewMode: { grid: "Cuadrícula", table: "Tabla", compact: "Compacto" },
     quota: { title: "Límites de Tarifa", rpm: "RPM", tpm: "TPM", rpd: "RPD", concurrency: "Concurrencia" },
@@ -2170,7 +2176,8 @@ export const translations: Record<Language, TranslationDictionary> = {
       loadingView: "Ansicht wird geladen",
       updates: "Update-Notizen",
       whatsNew: "Neuigkeiten",
-      viewUpdate: "Mehr erfahren"
+      viewUpdate: "Mehr erfahren",
+      backToList: "Zurück zur Liste",
     },
     viewMode: { grid: "Raster", table: "Tabelle", compact: "Kompakt" },
     quota: { title: "Ratenlimits", rpm: "RPM", tpm: "TPM", rpd: "RPD", concurrency: "Nebenläufigkeit" },
@@ -2519,7 +2526,8 @@ export const translations: Record<Language, TranslationDictionary> = {
       loadingView: "Chargement de la vue",
       updates: "Notes de mise à jour",
       whatsNew: "Nouveautés",
-      viewUpdate: "En savoir plus"
+      viewUpdate: "En savoir plus",
+      backToList: "Retour à la liste",
     },
     viewMode: { grid: "Grille", table: "Tableau", compact: "Compact" },
     quota: { title: "Limites de Débit", rpm: "RPM", tpm: "TPM", rpd: "RPD", concurrency: "Concurrence" },
