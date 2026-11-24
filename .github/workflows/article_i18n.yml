@@ -36,6 +36,8 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           LITELLM_API_KEY: ${{ secrets.LITELLM_API_KEY }}
           LITELLM_MODEL: openai/gpt-4o-mini
+          # mini 가 요점 개수를 바꿔 실패한 기사를 4.1 이 살렸다(2026-11-24 실측). 게이트웨이 가림은 모델과 무관해 넘기지 않는다.
+          LITELLM_FALLBACK_MODEL: openai/gpt-4.1
           LIMIT: ${{ inputs.limit || '100' }}
         run: |
           npm install -g wrangler

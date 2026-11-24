@@ -83,6 +83,13 @@ class ValidationTest(unittest.TestCase):
     def test_month_names_are_allowed(self):
         self.assertIsNone(self.check_number("2023년 6월", "June 2023"))
 
+    def test_numbers_written_as_words_are_allowed(self):
+        self.assertIsNone(self.check_number("3분의 1 이상", "More than one third"))
+        self.assertIsNone(self.check_number("반기별(연 2회)", "Semi-annually (twice a year)"))
+
+    def test_added_number_is_rejected(self):
+        self.assertIn("value changed", self.check_number("3분의 1", "one quarter (25%)"))
+
     def test_thousands_separator_is_ignored(self):
         self.assertIsNone(self.check_number("1,600개", "1600"))
 
@@ -147,6 +154,12 @@ class RequestTest(unittest.TestCase):
     def test_invalid_translation_from_every_model_returns_none(self):
         bad = {"finish_reason": "stop", "message": {"content": json.dumps(ta.to_wire({**good(), "title": "한국어 제목"}))}}
         self.assertIsNone(ta.request_translation(ta.build_payload(ROW), "en", self.CONFIG, self.opener([bad, dict(bad)], [])))
+
+    def test_masked_reply_does_not_try_the_fallback(self):
+        seen = []
+        masked = {"finish_reason": "stop", "message": {"content": json.dumps(ta.to_wire({**good(), "our_take": "Run [REDACTED] now"}))}}
+        self.assertIsNone(ta.request_translation(ta.build_payload(ROW), "en", self.CONFIG, self.opener([masked], seen)))
+        self.assertEqual(seen, ["m1"])
 
     def test_same_model_twice_is_called_once(self):
         seen = []
