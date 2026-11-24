@@ -36,6 +36,12 @@ jobs:
           cd frontend
           npm ci
 
+      # Worker(src/worker.ts)가 @sentry/cloudflare 를 import 한다. 프론트엔드에서만
+      # npm ci 를 돌리면 루트 의존성이 없어 wrangler 번들 단계와 Worker 를 불러오는
+      # 단위 테스트(src/articleI18n.test.ts)가 resolve 에 실패한다. 그래서 테스트 전에 설치한다.
+      - name: 📦 Install Worker Dependencies
+        run: npm ci
+
       - name: 🧪 Unit and component tests
         run: cd frontend && npm test
 
@@ -71,11 +77,6 @@ jobs:
           echo "✅ Secrets CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID are present."
           echo "Checking frontend build dist folder..."
           ls -la frontend/dist
-
-      # Worker(src/worker.ts)가 @sentry/cloudflare 를 import 한다. 프론트엔드에서만
-      # npm ci 를 돌리면 루트 의존성이 없어 wrangler 번들 단계에서 resolve 에 실패한다.
-      - name: 📦 Install Worker Dependencies
-        run: npm ci
 
       - name: ☁️ Deploy to Cloudflare Workers via Wrangler CLI
         run: |
