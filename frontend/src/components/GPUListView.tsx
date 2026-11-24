@@ -45,7 +45,7 @@ const TIER_STYLES: Record<GPUTier, { badge: string; glow: string; accent: string
   prosumer: {
     badge: 'bg-sky-100 dark:bg-sky-950 text-sky-800 dark:text-sky-300 border-sky-300 dark:border-sky-700',
     glow: 'hover:border-sky-500 hover:shadow-sky-100 dark:hover:shadow-sky-900',
-    accent: 'text-sky-600 dark:text-sky-400',
+    accent: 'text-sky-700 dark:text-sky-400',
   },
   consumer: {
     badge: 'bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700',
