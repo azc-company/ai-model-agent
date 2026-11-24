@@ -93,6 +93,26 @@ export interface TranslationDictionary {
     notFound: string;
     tokens: string;
   };
+  newsDetail: {
+    copyCode: string;
+    codeCopied: string;
+    linkCopied: string;
+    share: string;
+    readTime: string;
+    latestFeed: string;
+    synthesisTitle: string;
+    synthesisDesc: string;
+    source: string;
+    category: string;
+    summary: string;
+    roleTips: string;
+    roleDev: string;
+    rolePm: string;
+    roleBiz: string;
+    roleResearch: string;
+    sources: string;
+    sourcesToggle: string;
+  };
   feedback: {
     articleQ: string;
     advisorQ: string;
@@ -455,6 +475,26 @@ export const translations: Record<Language, TranslationDictionary> = {
       notFound: "모델을 찾을 수 없습니다.",
       tokens: "토큰",
     },
+    newsDetail: {
+      copyCode: "📋 코드 복사",
+      codeCopied: "코드 스니펫이 클립보드에 복사되었습니다!",
+      linkCopied: "링크가 클립보드에 복사되었습니다!",
+      share: "공유하기",
+      readTime: "⏱️ 약 3분 읽기",
+      latestFeed: "최신 피드 리포트",
+      synthesisTitle: "🔮 다중 소스 교차 합성 리포트 (Multi-Source Synthesis Report)",
+      synthesisDesc: "본 리포트는 아래 {n}개의 주요 공식 파트너 매체 및 학술 논문의 시각과 데이터를 교차 분석하여 단일 통합 기술 블로그로 재탄생되었습니다:",
+      source: "출처",
+      category: "카테고리",
+      summary: "요약",
+      roleTips: "직무별 실전 적용",
+      roleDev: "👩‍💻 개발자/엔지니어",
+      rolePm: "💡 기획자/PM",
+      roleBiz: "💼 비즈니스 리더",
+      roleResearch: "🔬 연구자/학계",
+      sources: "원문 출처",
+      sourcesToggle: "원문 출처 {n}개 보기",
+    },
     feedback: {
       articleQ: "이 기사가 도움이 됐나요?",
       advisorQ: "이 추천이 도움이 됐나요?",
@@ -814,6 +854,26 @@ export const translations: Record<Language, TranslationDictionary> = {
       alternativesNote: "Same tier, closest output price first.",
       notFound: "Model not found.",
       tokens: "tokens",
+    },
+    newsDetail: {
+      copyCode: "📋 Copy code",
+      codeCopied: "Code snippet copied to clipboard!",
+      linkCopied: "Link copied to clipboard!",
+      share: "Share",
+      readTime: "⏱️ About 3 min read",
+      latestFeed: "Latest feed report",
+      synthesisTitle: "🔮 Multi-Source Synthesis Report",
+      synthesisDesc: "This report cross-analyzes the perspectives and data of the {n} official media outlets and papers below into a single technical article:",
+      source: "Source",
+      category: "Category",
+      summary: "Summary",
+      roleTips: "Practical tips by role",
+      roleDev: "👩‍💻 Developers/Engineers",
+      rolePm: "💡 Product/PM",
+      roleBiz: "💼 Business leaders",
+      roleResearch: "🔬 Researchers/Academia",
+      sources: "Original sources",
+      sourcesToggle: "View {n} original sources",
     },
     feedback: {
       articleQ: "Was this article helpful?",
@@ -1175,6 +1235,26 @@ export const translations: Record<Language, TranslationDictionary> = {
       notFound: "モデルが見つかりません。",
       tokens: "トークン",
     },
+    newsDetail: {
+      copyCode: "📋 コードをコピー",
+      codeCopied: "コードをクリップボードにコピーしました！",
+      linkCopied: "リンクをクリップボードにコピーしました！",
+      share: "共有",
+      readTime: "⏱️ 約3分で読めます",
+      latestFeed: "最新フィードレポート",
+      synthesisTitle: "🔮 マルチソース統合レポート",
+      synthesisDesc: "本レポートは以下の{n}件の主要メディア・論文の視点とデータを横断分析し、1本の技術記事にまとめたものです：",
+      source: "出典",
+      category: "カテゴリ",
+      summary: "要約",
+      roleTips: "職種別の実践ポイント",
+      roleDev: "👩‍💻 開発者/エンジニア",
+      rolePm: "💡 企画/PM",
+      roleBiz: "💼 ビジネスリーダー",
+      roleResearch: "🔬 研究者/学術",
+      sources: "出典",
+      sourcesToggle: "出典を{n}件表示",
+    },
     feedback: {
       articleQ: "この記事は役に立ちましたか？",
       advisorQ: "この推奨は役に立ちましたか？",
@@ -1535,6 +1615,26 @@ export const translations: Record<Language, TranslationDictionary> = {
       notFound: "未找到该模型。",
       tokens: "token",
     },
+    newsDetail: {
+      copyCode: "📋 复制代码",
+      codeCopied: "代码已复制到剪贴板！",
+      linkCopied: "链接已复制到剪贴板！",
+      share: "分享",
+      readTime: "⏱️ 约3分钟阅读",
+      latestFeed: "最新订阅报告",
+      synthesisTitle: "🔮 多源综合报告",
+      synthesisDesc: "本报告交叉分析了以下{n}家主要媒体和学术论文的观点与数据，整合为一篇技术文章：",
+      source: "来源",
+      category: "分类",
+      summary: "摘要",
+      roleTips: "按职能的实践建议",
+      roleDev: "👩‍💻 开发者/工程师",
+      rolePm: "💡 产品/PM",
+      roleBiz: "💼 业务负责人",
+      roleResearch: "🔬 研究人员/学术界",
+      sources: "原文来源",
+      sourcesToggle: "查看{n}个原文来源",
+    },
     feedback: {
       articleQ: "这篇文章有帮助吗？",
       advisorQ: "这个推荐有帮助吗？",
@@ -1884,6 +1984,26 @@ export const translations: Record<Language, TranslationDictionary> = {
       alternativesNote: "Mismo nivel, precio de salida más cercano primero.",
       notFound: "Modelo no encontrado.",
       tokens: "tokens",
+    },
+    newsDetail: {
+      copyCode: "📋 Copiar código",
+      codeCopied: "¡Código copiado al portapapeles!",
+      linkCopied: "¡Enlace copiado al portapapeles!",
+      share: "Compartir",
+      readTime: "⏱️ Unos 3 min de lectura",
+      latestFeed: "Informe del feed más reciente",
+      synthesisTitle: "🔮 Informe de síntesis multifuente",
+      synthesisDesc: "Este informe analiza de forma cruzada las perspectivas y datos de los {n} medios y artículos siguientes en un único artículo técnico:",
+      source: "Fuente",
+      category: "Categoría",
+      summary: "Resumen",
+      roleTips: "Consejos prácticos por rol",
+      roleDev: "👩‍💻 Desarrolladores/Ingenieros",
+      rolePm: "💡 Producto/PM",
+      roleBiz: "💼 Líderes de negocio",
+      roleResearch: "🔬 Investigadores/Academia",
+      sources: "Fuentes originales",
+      sourcesToggle: "Ver {n} fuentes originales",
     },
     feedback: {
       articleQ: "¿Te resultó útil este artículo?",
@@ -2235,6 +2355,26 @@ export const translations: Record<Language, TranslationDictionary> = {
       notFound: "Modell nicht gefunden.",
       tokens: "Tokens",
     },
+    newsDetail: {
+      copyCode: "📋 Code kopieren",
+      codeCopied: "Code-Snippet in die Zwischenablage kopiert!",
+      linkCopied: "Link in die Zwischenablage kopiert!",
+      share: "Teilen",
+      readTime: "⏱️ Etwa 3 Min. Lesezeit",
+      latestFeed: "Neuester Feed-Bericht",
+      synthesisTitle: "🔮 Multi-Source-Synthesebericht",
+      synthesisDesc: "Dieser Bericht analysiert die Perspektiven und Daten der folgenden {n} Medien und Fachartikel und fasst sie zu einem technischen Artikel zusammen:",
+      source: "Quelle",
+      category: "Kategorie",
+      summary: "Zusammenfassung",
+      roleTips: "Praxistipps nach Rolle",
+      roleDev: "👩‍💻 Entwickler/Ingenieure",
+      rolePm: "💡 Produkt/PM",
+      roleBiz: "💼 Führungskräfte",
+      roleResearch: "🔬 Forschung/Wissenschaft",
+      sources: "Originalquellen",
+      sourcesToggle: "{n} Originalquellen anzeigen",
+    },
     feedback: {
       articleQ: "War dieser Artikel hilfreich?",
       advisorQ: "War diese Empfehlung hilfreich?",
@@ -2584,6 +2724,26 @@ export const translations: Record<Language, TranslationDictionary> = {
       alternativesNote: "Même niveau, prix de sortie le plus proche d'abord.",
       notFound: "Modèle introuvable.",
       tokens: "tokens",
+    },
+    newsDetail: {
+      copyCode: "📋 Copier le code",
+      codeCopied: "Extrait de code copié dans le presse-papiers !",
+      linkCopied: "Lien copié dans le presse-papiers !",
+      share: "Partager",
+      readTime: "⏱️ Environ 3 min de lecture",
+      latestFeed: "Dernier rapport du flux",
+      synthesisTitle: "🔮 Rapport de synthèse multi-sources",
+      synthesisDesc: "Ce rapport croise les points de vue et les données des {n} médias et articles ci-dessous en un seul article technique :",
+      source: "Source",
+      category: "Catégorie",
+      summary: "Résumé",
+      roleTips: "Conseils pratiques par rôle",
+      roleDev: "👩‍💻 Développeurs/Ingénieurs",
+      rolePm: "💡 Produit/PM",
+      roleBiz: "💼 Dirigeants",
+      roleResearch: "🔬 Chercheurs/Universitaires",
+      sources: "Sources originales",
+      sourcesToggle: "Voir les {n} sources originales",
     },
     feedback: {
       articleQ: "Cet article vous a-t-il été utile ?",

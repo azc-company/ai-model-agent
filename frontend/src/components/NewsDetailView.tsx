@@ -281,11 +281,11 @@ export function NewsDetailView({ article, t, onBack }: NewsDetailViewProps) {
               <button
                 onClick={() => {
                   navigator.clipboard.writeText(codeText);
-                  alert('코드 스니펫이 클립보드에 복사되었습니다!');
+                  alert(tr.newsDetail.codeCopied);
                 }}
                 className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white font-bold transition-all shadow-sm"
               >
-                📋 코드 복사
+                {tr.newsDetail.copyCode}
               </button>
             </div>
             <pre className="surface-tint p-4 overflow-x-auto text-xs sm:text-sm font-mono text-cyan-200 leading-relaxed bg-slate-950">
@@ -690,11 +690,11 @@ export function NewsDetailView({ article, t, onBack }: NewsDetailViewProps) {
                   navigator.share({ title: article.title, url: window.location.href });
                 } else {
                   navigator.clipboard.writeText(window.location.href);
-                  alert("링크가 클립보드에 복사되었습니다!");
+                  alert(tr.newsDetail.linkCopied);
                 }
               }}
               className="p-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-muted hover:text-blue-600 transition-colors"
-              title="공유하기"
+              title={tr.newsDetail.share}
             >
               <Share2 className="w-4 h-4" />
             </button>
@@ -751,7 +751,7 @@ export function NewsDetailView({ article, t, onBack }: NewsDetailViewProps) {
             <div className="flex flex-col gap-0.5 p-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800">
               <span className="text-2xs font-bold text-muted uppercase tracking-wider">Read Time</span>
               <span className="font-black text-blue-600 dark:text-blue-400 flex items-center gap-1">
-                ⏱️ 약 3분 읽기
+                {tr.newsDetail.readTime}
               </span>
             </div>
             <div className="flex flex-col gap-0.5 p-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800">
@@ -772,7 +772,7 @@ export function NewsDetailView({ article, t, onBack }: NewsDetailViewProps) {
           <div className="space-y-4">
             <div className="flex items-center gap-4 text-xs font-semibold text-muted">
               <span className="flex items-center gap-1"><Building2 className="w-3.5 h-3.5" /> {article.source_name}</span>
-              <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5" /> 최신 피드 리포트</span>
+              <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5" /> {tr.newsDetail.latestFeed}</span>
             </div>
 
             <h1 className="text-2xl sm:text-4xl font-black text-slate-900 dark:text-white leading-tight tracking-tight">
@@ -792,10 +792,10 @@ export function NewsDetailView({ article, t, onBack }: NewsDetailViewProps) {
               <div className="mt-4 p-4 rounded-2xl bg-purple-50/80 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800/60 shadow-sm space-y-2">
                 <div className="flex items-center gap-2 text-xs font-black text-purple-900 dark:text-purple-300">
                   <Sparkles className="w-4 h-4 text-purple-600 dark:text-purple-400 animate-pulse" />
-                  <span>🔮 다중 소스 교차 합성 리포트 (Multi-Source Synthesis Report)</span>
+                  <span>{tr.newsDetail.synthesisTitle}</span>
                 </div>
                 <p className="text-xs text-purple-800 dark:text-purple-300 font-medium">
-                  본 리포트는 아래 {article.multi_sources.length}개의 주요 공식 파트너 매체 및 학술 논문의 시각과 데이터를 교차 분석하여 단일 통합 기술 블로그로 재탄생되었습니다:
+                  {tr.newsDetail.synthesisDesc.replace('{n}', String(article.multi_sources.length))}
                 </p>
                 <div className="flex flex-wrap gap-2 pt-1">
                   {article.multi_sources.map((src, idx) => (
@@ -825,15 +825,15 @@ export function NewsDetailView({ article, t, onBack }: NewsDetailViewProps) {
                 // 똑같이 붙는 창작이었다. 실제로 있는 것만 보여준다.
                 : [
                     `# ${article.title}`,
-                    `> **출처**: ${article.source_name} | **카테고리**: ${article.category}`,
-                    ...(article.summary_bullets?.length ? ['---', '### 요약', ...article.summary_bullets.map((b) => `* ${b}`)] : []),
+                    `> **${tr.newsDetail.source}**: ${article.source_name} | **${tr.newsDetail.category}**: ${article.category}`,
+                    ...(article.summary_bullets?.length ? ['---', `### ${tr.newsDetail.summary}`, ...article.summary_bullets.map((b) => `* ${b}`)] : []),
                     ...(article.actionable_insight ? [
                       '---',
-                      '### 직무별 실전 적용',
-                      article.actionable_insight.developer && `* **👩‍💻 개발자/엔지니어**: ${article.actionable_insight.developer}`,
-                      article.actionable_insight.pm && `* **💡 기획자/PM**: ${article.actionable_insight.pm}`,
-                      article.actionable_insight.business && `* **💼 비즈니스 리더**: ${article.actionable_insight.business}`,
-                      article.actionable_insight.researcher && `* **🔬 연구자/학계**: ${article.actionable_insight.researcher}`,
+                      `### ${tr.newsDetail.roleTips}`,
+                      article.actionable_insight.developer && `* **${tr.newsDetail.roleDev}**: ${article.actionable_insight.developer}`,
+                      article.actionable_insight.pm && `* **${tr.newsDetail.rolePm}**: ${article.actionable_insight.pm}`,
+                      article.actionable_insight.business && `* **${tr.newsDetail.roleBiz}**: ${article.actionable_insight.business}`,
+                      article.actionable_insight.researcher && `* **${tr.newsDetail.roleResearch}**: ${article.actionable_insight.researcher}`,
                     ].filter(Boolean) as string[] : []),
                   ].join('\n\n')
             )}
@@ -853,7 +853,7 @@ export function NewsDetailView({ article, t, onBack }: NewsDetailViewProps) {
               <ArrowLeft className="w-4 h-4" /> {tr.nav.backToList}
             </button>
 
-            <NewsSources sources={article.multi_sources} fallbackUrl={article.source_url} fallbackLabel={t?.readOriginal || '원문 기사 전문 보러가기'} />
+            <NewsSources sources={article.multi_sources} fallbackUrl={article.source_url} fallbackLabel={t?.readOriginal || '원문 기사 전문 보러가기'} regionLabel={tr.newsDetail.sources} toggleLabel={tr.newsDetail.sourcesToggle} />
           </div>
 
         </div>
