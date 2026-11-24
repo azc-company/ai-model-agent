@@ -98,6 +98,7 @@ const I18N_TEXTS = {
     refresh: "새로고침",
     loadFailed: "뉴스를 불러오지 못했습니다. 잠시 후 새로고침해 주세요.",
     noArticles: "검색어나 렌즈 조건에 맞는 기사가 없습니다.",
+    loadMore: "더 보기",
     searchPlaceholder: "🔍 AI 트렌드 뉴스 키워드, 기업, 기술 검색 (예: OpenAI, Agent, 보안...)",
     searchResultCount: "개 기사 검색됨",
     factTitle: "핵심 3줄 요약 (Fact)",
@@ -127,6 +128,7 @@ const I18N_TEXTS = {
     refresh: "Refresh",
     loadFailed: "Could not load the news feed. Please refresh in a moment.",
     noArticles: "No articles found for the current search/lens filter.",
+    loadMore: "Show more",
     searchPlaceholder: "🔍 Search keywords, tech, company (e.g. OpenAI, Agent, Security...)",
     searchResultCount: "articles found",
     factTitle: "Key 3-Bullet Summary (Fact)",
@@ -156,6 +158,7 @@ const I18N_TEXTS = {
     refresh: "更新",
     loadFailed: "ニュースを読み込めませんでした。しばらくしてから更新してください。",
     noArticles: "検索条件やレンズに一致する記事がありません。",
+    loadMore: "もっと見る",
     searchPlaceholder: "🔍 キーワード・技術・企業検索 (例: OpenAI, Agent, セキュリティ...)",
     searchResultCount: "件ヒット",
     factTitle: "要約 3つのポイント (Fact)",
@@ -185,6 +188,7 @@ const I18N_TEXTS = {
     refresh: "刷新",
     loadFailed: "无法加载新闻。请稍后刷新。",
     noArticles: "没有符合当前搜索或视角筛选的文章。",
+    loadMore: "加载更多",
     searchPlaceholder: "🔍 搜索关键词、技术或公司 (例: OpenAI, Agent, 安全...)",
     searchResultCount: "条结果",
     factTitle: "核心 3 条摘要 (Fact)",
@@ -214,6 +218,7 @@ const I18N_TEXTS = {
     refresh: "Actualizar",
     loadFailed: "No se pudieron cargar las noticias. Actualiza en un momento.",
     noArticles: "No hay artículos para la búsqueda o el filtro actual.",
+    loadMore: "Ver más",
     searchPlaceholder: "🔍 Buscar palabras clave, empresas o tecnología...",
     searchResultCount: "artículos encontrados",
     factTitle: "Resumen de 3 Puntos (Fact)",
@@ -243,6 +248,7 @@ const I18N_TEXTS = {
     refresh: "Aktualisieren",
     loadFailed: "Nachrichten konnten nicht geladen werden. Bitte in Kürze aktualisieren.",
     noArticles: "Keine Artikel für die aktuelle Suche bzw. den Filter.",
+    loadMore: "Mehr anzeigen",
     searchPlaceholder: "🔍 Stichwort, Unternehmen oder Technologie suchen...",
     searchResultCount: "Artikel gefunden",
     factTitle: "Kernpunkte 3-Zeilen (Fact)",
@@ -272,6 +278,7 @@ const I18N_TEXTS = {
     refresh: "Actualiser",
     loadFailed: "Impossible de charger les actualités. Veuillez actualiser dans un instant.",
     noArticles: "Aucun article ne correspond à la recherche ou au filtre actuel.",
+    loadMore: "Afficher plus",
     searchPlaceholder: "🔍 Rechercher par mots-clés, entreprises...",
     searchResultCount: "articles trouvés",
     factTitle: "Résumé en 3 Points (Fact)",
@@ -581,6 +588,11 @@ export default function NewsPulseView() {
   }, []);
 
   // 키워드 및 렌즈 실시간 필터링 (3중 정밀 데두플리케이션 적용)
+  // 795건 카드를 한 번에 그리면 모바일 첫 화면이 느리다. 데이터는 전부 받고(검색·공유 링크용) 그리는 것만 나눈다.
+  const PAGE_SIZE = 30;
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  useEffect(() => setVisibleCount(PAGE_SIZE), [activeLens, searchQuery]);
+
   const filteredArticles = useMemo(() => {
     if (!newsData?.articles) return [];
     let list = newsData.articles;
@@ -801,7 +813,7 @@ export default function NewsPulseView() {
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:gap-6 mx-auto w-full max-w-5xl">
-          {filteredArticles.map(article => (
+          {filteredArticles.slice(0, visibleCount).map(article => (
             <div key={article.id} className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-xl transition-all duration-300 group">
               <div className="p-4 sm:p-6 h-full">
                 <div className="flex flex-col md:flex-row items-start gap-6">
@@ -942,6 +954,15 @@ export default function NewsPulseView() {
               </div>
             </div>
           ))}
+          {visibleCount < filteredArticles.length && (
+            <button
+              type="button"
+              onClick={() => setVisibleCount(n => n + PAGE_SIZE)}
+              className="mx-auto px-6 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-bold text-gray-800 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700"
+            >
+              {t.loadMore} ({visibleCount} / {filteredArticles.length})
+            </button>
+          )}
         </div>
       )}
 

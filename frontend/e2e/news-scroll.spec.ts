@@ -9,11 +9,11 @@ const articles = NAMES.map((name, i) => ({
   actionable_insight: {}, impact_score: 80, tags: [], matched_lenses: [], is_synthesized: false,
 }));
 
-async function openNews(page: Page, path = '/?tab=news') {
+async function openNews(page: Page, path = '/?tab=news', list = articles) {
   await page.addInitScript(() => localStorage.setItem('llm_compass_lang', 'ko'));
   await stubCatalog(page);
   await page.route('**/api/v1/changelog*', (r) => r.fulfill({ json: [] }));
-  await page.route('**/api/v1/news/pulse*', (r) => r.fulfill({ json: { articles, total_count: 12, last_updated: '' } }));
+  await page.route('**/api/v1/news/pulse*', (r) => r.fulfill({ json: { articles: list, total_count: list.length, last_updated: '' } }));
   await page.route('**/api/v1/news/articles/*', (r) => r.fulfill({
     json: { blog_summary: '본문 문단입니다.\n\n'.repeat(400), key_numbers: [], our_take: '', open_questions: [], mentioned_models: [] },
   }));
@@ -61,4 +61,16 @@ test('공유 링크로 상세부터 열었다면 목록 맨 위로 간다', asyn
   await backButton(page).click();
   await expect(page.getByRole('heading', { name: /Alpha 0 launch/ })).toBeVisible();
   await expect.poll(() => scrollY(page)).toBe(0);
+});
+
+test('카드는 30건씩 그리고 더 보기로 늘린다', async ({ page }) => {
+  const many = Array.from({ length: 70 }, (_, i) => ({ ...articles[0], id: `m${i}`, title: `Story ${i} ${NAMES[i % 12]}`, source_url: `https://example.com/s${i}` }));
+  await openNews(page, '/?tab=news', many);
+  const cards = page.getByRole('heading', { name: /^Story \d+/ });
+  await expect(cards).toHaveCount(30);
+  await page.getByRole('button', { name: /더 보기/ }).click();
+  await expect(cards).toHaveCount(60);
+  await page.getByRole('button', { name: /더 보기/ }).click();
+  await expect(cards).toHaveCount(70);
+  await expect(page.getByRole('button', { name: /더 보기/ })).toHaveCount(0);
 });
